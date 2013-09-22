@@ -96,11 +96,13 @@ func sampler(orig, dir vector) vector {
 
 	b := l.dotProduct(bounce)
 
-	var st1 status
 	if b < 0 {
 		b = 0
-	} else if st1, dist, bounce = tracer(h, l); st1 != missUpward {
-		b = 0
+	} else {
+		var st status
+		if st, dist, bounce = tracer(h, l); st != missUpward {
+			b = 0
+		}
 	}
 
 	var sf float64
