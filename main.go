@@ -3,40 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/kid0m4n/gorays/vector"
 	"log"
 	"math"
 	"math/rand"
 	"os"
 	"runtime/pprof"
 )
-
-type vector struct {
-	x, y, z float64
-}
-
-func (v vector) add(r vector) vector {
-	return vector{v.x + r.x, v.y + r.y, v.z + r.z}
-}
-
-func (v vector) scale(r float64) vector {
-	return vector{v.x * r, v.y * r, v.z * r}
-}
-
-func (v vector) dotProduct(r vector) float64 {
-	return v.x*r.x + v.y*r.y + v.z*r.z
-}
-
-func (v vector) crossProduct(r vector) vector {
-	return vector{v.y*r.z - v.z*r.y, v.z*r.x - v.x*r.z, v.x*r.y - v.y*r.x}
-}
-
-func (v vector) normalize() vector {
-	return v.scale(1.0 / math.Sqrt(v.dotProduct(v)))
-}
-
-func newVector(x, y, z float64) vector {
-	return vector{x, y, z}
-}
 
 var G = []int{247570, 280596, 280600, 249748, 18578, 18577, 231184, 16, 16}
 
@@ -60,41 +33,41 @@ func main() {
 
 	fmt.Printf("P6 %v %v 255 ", *width, *height)
 
-	g := newVector(-6, -16, 0).normalize()
-	a := newVector(0, 0, 1).crossProduct(g).normalize().scale(0.002)
-	b := g.crossProduct(a).normalize().scale(0.002)
-	c := a.add(b).scale(-256).add(g)
+	g := vector.New(-6, -16, 0).Normalize()
+	a := vector.New(0, 0, 1).CrossProduct(g).Normalize().Scale(0.002)
+	b := g.CrossProduct(a).Normalize().Scale(0.002)
+	c := a.Add(b).Scale(-256).Add(g)
 
 	for y := (*height - 1); y >= 0; y-- {
 		for x := (*width - 1); x >= 0; x-- {
-			p := vector{13, 13, 13}
+			p := vector.Vector{13, 13, 13}
 
 			for i := 0; i < 64; i++ {
-				t := a.scale(rand.Float64() - 0.5).scale(99).add(b.scale(rand.Float64() - 0.5).scale(99))
-				orig := newVector(17, 16, 8).add(t)
-				dir := t.scale(-1).add(a.scale(rand.Float64() + float64(x)).add(b.scale(float64(y) + rand.Float64())).add(c).scale(16)).normalize()
-				p = sampler(orig, dir).scale(3.5).add(p)
+				t := a.Scale(rand.Float64() - 0.5).Scale(99).Add(b.Scale(rand.Float64() - 0.5).Scale(99))
+				orig := vector.New(17, 16, 8).Add(t)
+				dir := t.Scale(-1).Add(a.Scale(rand.Float64() + float64(x)).Add(b.Scale(float64(y) + rand.Float64())).Add(c).Scale(16)).Normalize()
+				p = sampler(orig, dir).Scale(3.5).Add(p)
 			}
 
-			if n, err := os.Stdout.Write([]byte{byte(p.x), byte(p.y), byte(p.z)}); n != 3 || err != nil {
+			if n, err := os.Stdout.Write([]byte{byte(p.X), byte(p.Y), byte(p.Z)}); n != 3 || err != nil {
 				panic(err)
 			}
 		}
 	}
 }
 
-func sampler(orig, dir vector) vector {
+func sampler(orig, dir vector.Vector) vector.Vector {
 	st, dist, bounce := tracer(orig, dir)
 
 	if st == missUpward {
-		return newVector(0.7, 0.6, 1).scale(math.Pow(1-dir.z, 4))
+		return vector.New(0.7, 0.6, 1).Scale(math.Pow(1-dir.Z, 4))
 	}
 
-	h := orig.add(dir.scale(dist))
-	l := newVector(9+rand.Float64(), 9+rand.Float64(), 16).add(h.scale(-1)).normalize()
-	r := dir.add(bounce.scale(bounce.dotProduct(dir.scale(-2))))
+	h := orig.Add(dir.Scale(dist))
+	l := vector.New(9+rand.Float64(), 9+rand.Float64(), 16).Add(h.Scale(-1)).Normalize()
+	r := dir.Add(bounce.Scale(bounce.DotProduct(dir.Scale(-2))))
 
-	b := l.dotProduct(bounce)
+	b := l.DotProduct(bounce)
 
 	if b < 0 {
 		b = 0
@@ -110,18 +83,18 @@ func sampler(orig, dir vector) vector {
 		sf = 1.0
 	}
 
-	p := math.Pow(l.dotProduct(r.scale(sf)), 99)
+	p := math.Pow(l.DotProduct(r.Scale(sf)), 99)
 
 	if st == missDownward {
-		h = h.scale(0.2)
-		fc := vector{3, 3, 3}
-		if int(math.Ceil(h.x)+math.Ceil(h.y))&1 == 1 {
-			fc = vector{3, 1, 1}
+		h = h.Scale(0.2)
+		fc := vector.Vector{3, 3, 3}
+		if int(math.Ceil(h.X)+math.Ceil(h.Y))&1 == 1 {
+			fc = vector.Vector{3, 1, 1}
 		}
-		return fc.scale(b*0.2 + 0.1)
+		return fc.Scale(b*0.2 + 0.1)
 	}
 
-	return newVector(p, p, p).add(sampler(h, r).scale(0.5))
+	return vector.New(p, p, p).Add(sampler(h, r).Scale(0.5))
 }
 
 type status int
@@ -132,22 +105,22 @@ const (
 	hit
 )
 
-func tracer(orig, dir vector) (st status, dist float64, bounce vector) {
+func tracer(orig, dir vector.Vector) (st status, dist float64, bounce vector.Vector) {
 	dist = 1e9
 	st = missUpward
-	p := -orig.z / dir.z
+	p := -orig.Z / dir.Z
 	if 0.01 < p {
 		dist = p
-		bounce = vector{0, 0, 1}
+		bounce = vector.Vector{0, 0, 1}
 		st = missDownward
 	}
 
 	for k := 18; k >= 0; k-- {
 		for j, g := range G {
 			if g&(1<<uint(k)) != 0 {
-				p := orig.add(vector{float64(-k), 0, float64(-j - 4)})
-				b := p.dotProduct(dir)
-				c := p.dotProduct(p) - 1
+				p := orig.Add(vector.Vector{float64(-k), 0, float64(-j - 4)})
+				b := p.DotProduct(dir)
+				c := p.DotProduct(p) - 1
 				q := b*b - c
 
 				if q > 0 {
@@ -155,7 +128,7 @@ func tracer(orig, dir vector) (st status, dist float64, bounce vector) {
 
 					if s < dist && s > 0.01 {
 						dist = s
-						bounce = p.add(dir.scale(dist)).normalize()
+						bounce = p.Add(dir.Scale(dist)).Normalize()
 						st = hit
 					}
 				}
