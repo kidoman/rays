@@ -33,8 +33,8 @@ func main() {
 
 	fmt.Printf("P6 %v %v 255 ", *width, *height)
 
-	g := vector.New(-6, -16, 0).Normalize()
-	a := vector.New(0, 0, 1).CrossProduct(g).Normalize().Scale(0.002)
+	g := vector.Vector{-6, -16, 0}.Normalize()
+	a := vector.Vector{0, 0, 1}.CrossProduct(g).Normalize().Scale(0.002)
 	b := g.CrossProduct(a).Normalize().Scale(0.002)
 	c := a.Add(b).Scale(-256).Add(g)
 
@@ -44,7 +44,7 @@ func main() {
 
 			for i := 0; i < 64; i++ {
 				t := a.Scale(rand.Float64() - 0.5).Scale(99).Add(b.Scale(rand.Float64() - 0.5).Scale(99))
-				orig := vector.New(17, 16, 8).Add(t)
+				orig := vector.Vector{17, 16, 8}.Add(t)
 				dir := t.Scale(-1).Add(a.Scale(rand.Float64() + float64(x)).Add(b.Scale(float64(y) + rand.Float64())).Add(c).Scale(16)).Normalize()
 				p = sampler(orig, dir).Scale(3.5).Add(p)
 			}
@@ -60,11 +60,11 @@ func sampler(orig, dir vector.Vector) vector.Vector {
 	st, dist, bounce := tracer(orig, dir)
 
 	if st == missUpward {
-		return vector.New(0.7, 0.6, 1).Scale(math.Pow(1-dir.Z, 4))
+		return vector.Vector{0.7, 0.6, 1}.Scale(math.Pow(1-dir.Z, 4))
 	}
 
 	h := orig.Add(dir.Scale(dist))
-	l := vector.New(9+rand.Float64(), 9+rand.Float64(), 16).Add(h.Scale(-1)).Normalize()
+	l := vector.Vector{9 + rand.Float64(), 9 + rand.Float64(), 16}.Add(h.Scale(-1)).Normalize()
 	r := dir.Add(bounce.Scale(bounce.DotProduct(dir.Scale(-2))))
 
 	b := l.DotProduct(bounce)
@@ -94,7 +94,7 @@ func sampler(orig, dir vector.Vector) vector.Vector {
 		return fc.Scale(b*0.2 + 0.1)
 	}
 
-	return vector.New(p, p, p).Add(sampler(h, r).Scale(0.5))
+	return vector.Vector{p, p, p}.Add(sampler(h, r).Scale(0.5))
 }
 
 type status int

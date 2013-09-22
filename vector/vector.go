@@ -25,7 +25,3 @@ func (v Vector) CrossProduct(r Vector) Vector {
 func (v Vector) Normalize() Vector {
 	return v.Scale(1.0 / math.Sqrt(v.DotProduct(v)))
 }
-
-func New(x, y, z float64) Vector {
-	return Vector{x, y, z}
-}
