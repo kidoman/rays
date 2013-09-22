@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"math"
 	"math/rand"
@@ -37,16 +38,23 @@ func newVector(x, y, z float64) vector {
 
 var G = []int{247570, 280596, 280600, 249748, 18578, 18577, 231184, 16, 16}
 
+var (
+	width  = flag.Int("width", 512, "width of the rendered image")
+	height = flag.Int("height", 512, "height of the rendered image")
+)
+
 func main() {
-	fmt.Print("P6 512 512 255 ")
+	flag.Parse()
+
+	fmt.Printf("P6 %v %v 255 ", *width, *height)
 
 	g := newVector(-6, -16, 0).normalize()
 	a := newVector(0, 0, 1).crossProduct(g).normalize().scale(0.002)
 	b := g.crossProduct(a).normalize().scale(0.002)
 	c := a.add(b).scale(-256).add(g)
 
-	for y := 511; y >= 0; y-- {
-		for x := 511; x >= 0; x-- {
+	for y := (*height - 1); y >= 0; y-- {
+		for x := (*width - 1); x >= 0; x-- {
 			p := vector{13, 13, 13}
 
 			for i := 0; i < 64; i++ {
