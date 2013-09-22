@@ -23,5 +23,6 @@ func (v Vector) CrossProduct(r Vector) Vector {
 }
 
 func (v Vector) Normalize() Vector {
-	return v.Scale(1.0 / math.Sqrt(v.DotProduct(v)))
+	factor := 1.0 / math.Sqrt(v.X*v.X+v.Y*v.Y+v.Z*v.Z)
+	return Vector{v.X * factor, v.Y * factor, v.Z * factor}
 }
