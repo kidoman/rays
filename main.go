@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
 	"os"
+	"runtime/pprof"
 )
 
 type vector struct {
@@ -39,12 +41,22 @@ func newVector(x, y, z float64) vector {
 var G = []int{247570, 280596, 280600, 249748, 18578, 18577, 231184, 16, 16}
 
 var (
-	width  = flag.Int("width", 512, "width of the rendered image")
-	height = flag.Int("height", 512, "height of the rendered image")
+	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+	width      = flag.Int("width", 512, "width of the rendered image")
+	height     = flag.Int("height", 512, "height of the rendered image")
 )
 
 func main() {
 	flag.Parse()
+
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 
 	fmt.Printf("P6 %v %v 255 ", *width, *height)
 
