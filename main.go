@@ -141,8 +141,8 @@ func tracer(orig, dir vector) (st status, dist float64, bounce vector) {
 	}
 
 	for k := 18; k >= 0; k-- {
-		for j := 8; j >= 0; j-- {
-			if G[j]&(1<<uint(k)) != 0 {
+		for j, g := range G {
+			if g&(1<<uint(k)) != 0 {
 				p := orig.add(vector{float64(-k), 0, float64(-j - 4)})
 				b := p.dotProduct(dir)
 				c := p.dotProduct(p) - 1
