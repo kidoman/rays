@@ -71,7 +71,9 @@ func main() {
 
 			for i := 0; i < 64; i++ {
 				t := a.scale(rand.Float64() - 0.5).scale(99).add(b.scale(rand.Float64() - 0.5).scale(99))
-				p = sampler(newVector(17, 16, 8).add(t), t.scale(-1).add(a.scale(rand.Float64()+float64(x)).add(b.scale(float64(y)+rand.Float64())).add(c).scale(16)).normalize()).scale(3.5).add(p)
+				orig := newVector(17, 16, 8).add(t)
+				dir := t.scale(-1).add(a.scale(rand.Float64() + float64(x)).add(b.scale(float64(y) + rand.Float64())).add(c).scale(16)).normalize()
+				p = sampler(orig, dir).scale(3.5).add(p)
 			}
 
 			if n, err := os.Stdout.Write([]byte{byte(p.x), byte(p.y), byte(p.z)}); n != 3 || err != nil {
