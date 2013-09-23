@@ -11,7 +11,19 @@ import (
 	"runtime/pprof"
 )
 
-var G = []int{247570, 280596, 280600, 249748, 18578, 18577, 231184, 16, 16}
+var art = []string{
+	"                   ",
+	"    1111           ",
+	"   1    1          ",
+	"  1           11   ",
+	"  1          1  1  ",
+	"  1     11  1    1 ",
+	"  1      1  1    1 ",
+	"   1     1   1  1  ",
+	"    11111     11   ",
+}
+
+var G []int = makeBV()
 
 var (
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
@@ -137,4 +149,20 @@ func tracer(orig, dir vector.Vector) (st status, dist float64, bounce vector.Vec
 	}
 
 	return
+}
+
+func makeBV() []int {
+	bv := make([]int, 9)
+	for i, s := range art {
+		sum := 0
+		for j, c := range s {
+			if string(c) != " " {
+				sum += 1 << uint(18-j)
+			}
+		}
+
+		bv[8-i] = sum
+	}
+
+	return bv
 }
