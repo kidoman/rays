@@ -33,7 +33,7 @@ func main() {
 
 	fmt.Printf("P6 %v %v 255 ", *width, *height)
 
-	g := vector.Vector{-6, -16, 0}.Normalize()
+	g := vector.Vector{-5.5, -16, 0}.Normalize()
 	a := vector.Vector{0, 0, 1}.CrossProduct(g).Normalize().Scale(0.002)
 	b := g.CrossProduct(a).Normalize().Scale(0.002)
 	c := a.Add(b).Scale(-256).Add(g)
@@ -118,7 +118,7 @@ func tracer(orig, dir vector.Vector) (st status, dist float64, bounce vector.Vec
 	for k := 18; k >= 0; k-- {
 		for j, g := range G {
 			if g&(1<<uint(k)) != 0 {
-				p := orig.Add(vector.Vector{float64(-k), 0, float64(-j - 4)})
+				p := orig.Add(vector.Vector{float64(-k), 3, float64(-j - 4)})
 				b := p.DotProduct(dir)
 				c := p.DotProduct(p) - 1
 				q := b*b - c
