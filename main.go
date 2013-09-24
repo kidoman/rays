@@ -7,7 +7,9 @@ import (
 	"log"
 	"math"
 	"os"
+	"runtime"
 	"runtime/pprof"
+	"sync"
 )
 
 var art = []string{
@@ -59,6 +61,7 @@ var (
 )
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Parse()
 
 	if *cpuprofile != "" {
@@ -73,34 +76,64 @@ func main() {
 	fmt.Printf("P6 %v %v 255 ", *width, *height)
 
 	bytes := make([]byte, 3**width**height)
-	k := 0
 
 	g := vector.Vector{X: -5.5, Y: -16, Z: 0}.Normalize()
 	a := vector.Vector{X: 0, Y: 0, Z: 1}.CrossProduct(g).Normalize().Scale(0.002)
 	b := g.CrossProduct(a).Normalize().Scale(0.002)
 	c := a.Add(b).Scale(-256).Add(g)
 
+	rows := make(chan row, *height)
+	wg := &sync.WaitGroup{}
+	startWorkers(runtime.NumCPU(), &a, &b, &c, bytes, rows, wg)
+
 	for y := (*height - 1); y >= 0; y-- {
-		for x := (*width - 1); x >= 0; x-- {
-			p := vector.Vector{X: 13, Y: 13, Z: 13}
-
-			for i := 0; i < 64; i++ {
-				t := a.Scale(Rand() - 0.5).Scale(99).Add(b.Scale(Rand() - 0.5).Scale(99))
-				orig := vector.Vector{X: 17, Y: 16, Z: 8}.Add(t)
-				dir := t.Scale(-1).Add(a.Scale(Rand() + float64(x)).Add(b.Scale(float64(y) + Rand())).Add(c).Scale(16)).Normalize()
-				p = sampler(orig, dir).Scale(3.5).Add(p)
-			}
-
-			bytes[k] = byte(p.X)
-			bytes[k+1] = byte(p.Y)
-			bytes[k+2] = byte(p.Z)
-
-			k += 3
-		}
+		wg.Add(1)
+		rows <- row(y)
 	}
+
+	wg.Wait()
+	close(rows)
 
 	if _, err := os.Stdout.Write(bytes); err != nil {
 		log.Panic(err)
+	}
+}
+
+type row int
+
+func startWorkers(count int, a, b, c *vector.Vector, bytes []byte, rows <-chan row, wg *sync.WaitGroup) {
+	for i := 0; i < count; i++ {
+		go func() {
+			for {
+				r, ok := <-rows
+				if !ok {
+					return
+				}
+				renderRow(a, b, c, bytes, r)
+				wg.Done()
+			}
+		}()
+	}
+}
+
+func renderRow(a, b, c *vector.Vector, bytes []byte, r row) {
+	k := (*height - int(r) - 1) * 3 * *width
+
+	for x := (*width - 1); x >= 0; x-- {
+		p := vector.Vector{X: 13, Y: 13, Z: 13}
+
+		for i := 0; i < 64; i++ {
+			t := a.Scale(Rand() - 0.5).Scale(99).Add(b.Scale(Rand() - 0.5).Scale(99))
+			orig := vector.Vector{X: 17, Y: 16, Z: 8}.Add(t)
+			dir := t.Scale(-1).Add(a.Scale(Rand() + float64(x)).Add(b.Scale(float64(r) + Rand())).Add(*c).Scale(16)).Normalize()
+			p = sampler(orig, dir).Scale(3.5).Add(p)
+		}
+
+		bytes[k] = byte(p.X)
+		bytes[k+1] = byte(p.Y)
+		bytes[k+2] = byte(p.Z)
+
+		k += 3
 	}
 }
 
