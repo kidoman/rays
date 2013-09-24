@@ -45,18 +45,18 @@ func main() {
 
 	fmt.Printf("P6 %v %v 255 ", *width, *height)
 
-	g := vector.Vector{-5.5, -16, 0}.Normalize()
-	a := vector.Vector{0, 0, 1}.CrossProduct(g).Normalize().Scale(0.002)
+	g := vector.Vector{X: -5.5, Y: -16, Z: 0}.Normalize()
+	a := vector.Vector{X: 0, Y: 0, Z: 1}.CrossProduct(g).Normalize().Scale(0.002)
 	b := g.CrossProduct(a).Normalize().Scale(0.002)
 	c := a.Add(b).Scale(-256).Add(g)
 
 	for y := (*height - 1); y >= 0; y-- {
 		for x := (*width - 1); x >= 0; x-- {
-			p := vector.Vector{13, 13, 13}
+			p := vector.Vector{X: 13, Y: 13, Z: 13}
 
 			for i := 0; i < 64; i++ {
 				t := a.Scale(rand.Float64() - 0.5).Scale(99).Add(b.Scale(rand.Float64() - 0.5).Scale(99))
-				orig := vector.Vector{17, 16, 8}.Add(t)
+				orig := vector.Vector{X: 17, Y: 16, Z: 8}.Add(t)
 				dir := t.Scale(-1).Add(a.Scale(rand.Float64() + float64(x)).Add(b.Scale(float64(y) + rand.Float64())).Add(c).Scale(16)).Normalize()
 				p = sampler(orig, dir).Scale(3.5).Add(p)
 			}
@@ -72,11 +72,11 @@ func sampler(orig, dir vector.Vector) vector.Vector {
 	st, dist, bounce := tracer(orig, dir)
 
 	if st == missUpward {
-		return vector.Vector{0.7, 0.6, 1}.Scale(math.Pow(1-dir.Z, 4))
+		return vector.Vector{X: 0.7, Y: 0.6, Z: 1}.Scale(math.Pow(1-dir.Z, 4))
 	}
 
 	h := orig.Add(dir.Scale(dist))
-	l := vector.Vector{9 + rand.Float64(), 9 + rand.Float64(), 16}.Add(h.Scale(-1)).Normalize()
+	l := vector.Vector{X: 9 + rand.Float64(), Y: 9 + rand.Float64(), Z: 16}.Add(h.Scale(-1)).Normalize()
 	r := dir.Add(bounce.Scale(bounce.DotProduct(dir.Scale(-2))))
 
 	b := l.DotProduct(bounce)
@@ -99,14 +99,14 @@ func sampler(orig, dir vector.Vector) vector.Vector {
 
 	if st == missDownward {
 		h = h.Scale(0.2)
-		fc := vector.Vector{3, 3, 3}
+		fc := vector.Vector{X: 3, Y: 3, Z: 3}
 		if int(math.Ceil(h.X)+math.Ceil(h.Y))&1 == 1 {
-			fc = vector.Vector{3, 1, 1}
+			fc = vector.Vector{X: 3, Y: 1, Z: 1}
 		}
 		return fc.Scale(b*0.2 + 0.1)
 	}
 
-	return vector.Vector{p, p, p}.Add(sampler(h, r).Scale(0.5))
+	return vector.Vector{X: p, Y: p, Z: p}.Add(sampler(h, r).Scale(0.5))
 }
 
 type status int
@@ -123,14 +123,14 @@ func tracer(orig, dir vector.Vector) (st status, dist float64, bounce vector.Vec
 	p := -orig.Z / dir.Z
 	if 0.01 < p {
 		dist = p
-		bounce = vector.Vector{0, 0, 1}
+		bounce = vector.Vector{X: 0, Y: 0, Z: 1}
 		st = missDownward
 	}
 
 	for k := 18; k >= 0; k-- {
 		for j, g := range G {
 			if g&(1<<uint(k)) != 0 {
-				p := orig.Add(vector.Vector{float64(-k), 3, float64(-j - 4)})
+				p := orig.Add(vector.Vector{X: float64(-k), Y: 3, Z: float64(-j - 4)})
 				b := p.DotProduct(dir)
 				c := p.DotProduct(p) - 1
 				q := b*b - c
