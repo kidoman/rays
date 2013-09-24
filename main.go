@@ -6,7 +6,6 @@ import (
 	"github.com/kid0m4n/gorays/vector"
 	"log"
 	"math"
-	"math/rand"
 	"os"
 	"runtime/pprof"
 )
@@ -23,10 +22,7 @@ var art = []string{
 	"    11111     11   ",
 }
 
-var (
-	objects = makeObjects()
-	r       = rand.New(rand.NewSource(1337))
-)
+var objects = makeObjects()
 
 type object struct {
 	k, j int
@@ -43,6 +39,17 @@ func makeObjects() []object {
 	}
 
 	return objects
+}
+
+var seed = ^uint32(0)
+
+func Rand() float64 {
+	seed += seed
+	seed ^= 1
+	if int32(seed) < 0 {
+		seed ^= 0x88888eef
+	}
+	return float64(seed%95) / float64(95)
 }
 
 var (
@@ -78,9 +85,9 @@ func main() {
 			p := vector.Vector{X: 13, Y: 13, Z: 13}
 
 			for i := 0; i < 64; i++ {
-				t := a.Scale(r.Float64() - 0.5).Scale(99).Add(b.Scale(r.Float64() - 0.5).Scale(99))
+				t := a.Scale(Rand() - 0.5).Scale(99).Add(b.Scale(Rand() - 0.5).Scale(99))
 				orig := vector.Vector{X: 17, Y: 16, Z: 8}.Add(t)
-				dir := t.Scale(-1).Add(a.Scale(r.Float64() + float64(x)).Add(b.Scale(float64(y) + r.Float64())).Add(c).Scale(16)).Normalize()
+				dir := t.Scale(-1).Add(a.Scale(Rand() + float64(x)).Add(b.Scale(float64(y) + Rand())).Add(c).Scale(16)).Normalize()
 				p = sampler(orig, dir).Scale(3.5).Add(p)
 			}
 
@@ -105,7 +112,7 @@ func sampler(orig, dir vector.Vector) vector.Vector {
 	}
 
 	h := orig.Add(dir.Scale(dist))
-	l := vector.Vector{X: 9 + r.Float64(), Y: 9 + r.Float64(), Z: 16}.Add(h.Scale(-1)).Normalize()
+	l := vector.Vector{X: 9 + Rand(), Y: 9 + Rand(), Z: 16}.Add(h.Scale(-1)).Normalize()
 	r := dir.Add(bounce.Scale(bounce.DotProduct(dir.Scale(-2))))
 
 	b := l.DotProduct(bounce)
