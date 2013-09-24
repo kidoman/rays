@@ -24,9 +24,26 @@ var art = []string{
 }
 
 var (
-	G = makeBV()
-	r = rand.New(rand.NewSource(1337))
+	objects = makeObjects()
+	r       = rand.New(rand.NewSource(1337))
 )
+
+type object struct {
+	k, j int
+}
+
+func makeObjects() []object {
+	objects := make([]object, 0, len(art)*len(art[0]))
+	for k := 18; k >= 0; k-- {
+		for j := 8; j >= 0; j-- {
+			if string(art[j][18-k]) != " " {
+				objects = append(objects, object{k: k, j: 8 - j})
+			}
+		}
+	}
+
+	return objects
+}
 
 var (
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
@@ -139,42 +156,24 @@ func tracer(orig, dir vector.Vector) (st status, dist float64, bounce vector.Vec
 		st = missDownward
 	}
 
-	for k := 18; k >= 0; k-- {
-		for j, g := range G {
-			if g&(1<<uint(k)) != 0 {
-				p := orig.Add(vector.Vector{X: float64(-k), Y: 3, Z: float64(-j - 4)})
-				b := p.DotProduct(dir)
-				c := p.DotProduct(p) - 1
-				q := b*b - c
+	for _, object := range objects {
+		k, j := object.k, object.j
 
-				if q > 0 {
-					s := -b - math.Sqrt(q)
+		p := orig.Add(vector.Vector{X: float64(-k), Y: 3, Z: float64(-j - 4)})
+		b := p.DotProduct(dir)
+		c := p.DotProduct(p) - 1
+		q := b*b - c
 
-					if s < dist && s > 0.01 {
-						dist = s
-						bounce = p.Add(dir.Scale(dist)).Normalize()
-						st = hit
-					}
-				}
+		if q > 0 {
+			s := -b - math.Sqrt(q)
+
+			if s < dist && s > 0.01 {
+				dist = s
+				bounce = p.Add(dir.Scale(dist)).Normalize()
+				st = hit
 			}
 		}
 	}
 
 	return
-}
-
-func makeBV() []int {
-	bv := make([]int, 9)
-	for i, s := range art {
-		sum := 0
-		for j, c := range s {
-			if string(c) != " " {
-				sum += 1 << uint(18-j)
-			}
-		}
-
-		bv[8-i] = sum
-	}
-
-	return bv
 }
