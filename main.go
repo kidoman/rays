@@ -4,10 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"github.com/kid0m4n/gorays/vector"
+	"image"
+	"image/png"
 	"log"
 	"math"
 	"os"
 	"runtime/pprof"
+	"time"
 )
 
 var art = []string{
@@ -53,10 +56,15 @@ func Rand() float64 {
 }
 
 var (
+	outimage   = "rays.png"
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	width      = flag.Int("width", 512, "width of the rendered image")
 	height     = flag.Int("height", 512, "height of the rendered image")
 )
+
+func init() {
+	flag.StringVar(&outimage, "o", outimage, "write output to this png file")
+}
 
 func main() {
 	flag.Parse()
@@ -70,17 +78,25 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	fmt.Printf("P6 %v %v 255 ", *width, *height)
-
-	bytes := make([]byte, 3**width**height)
-	k := 0
-
 	g := vector.Vector{X: -5.5, Y: -16, Z: 0}.Normalize()
 	a := vector.Vector{X: 0, Y: 0, Z: 1}.CrossProduct(g).Normalize().Scale(0.002)
 	b := g.CrossProduct(a).Normalize().Scale(0.002)
 	c := a.Add(b).Scale(-256).Add(g)
 
+	img := image.NewRGBA(image.Rect(0, 0, *width, *height))
+
+	const (
+		R = iota
+		G
+		B
+		A
+	)
+
+	pos := 0
+	invheight := 1.0 / float32(*height-1)
+	s := time.Now()
 	for y := (*height - 1); y >= 0; y-- {
+		fmt.Printf("%.2f%%\r", 100*(1-invheight*float32(y)))
 		for x := (*width - 1); x >= 0; x-- {
 			p := vector.Vector{X: 13, Y: 13, Z: 13}
 
@@ -91,16 +107,23 @@ func main() {
 				p = sampler(orig, dir).Scale(3.5).Add(p)
 			}
 
-			bytes[k] = byte(p.X)
-			bytes[k+1] = byte(p.Y)
-			bytes[k+2] = byte(p.Z)
-
-			k += 3
+			img.Pix[pos+R] = uint8(p.X)
+			img.Pix[pos+G] = uint8(p.Y)
+			img.Pix[pos+B] = uint8(p.Z)
+			img.Pix[pos+A] = 0xff
+			pos += 4
 		}
 	}
-
-	if _, err := os.Stdout.Write(bytes); err != nil {
-		log.Panic(err)
+	e := time.Since(s)
+	pixels := (*width) * (*height)
+	fmt.Printf("Traced %d pixels in %s, %s/pixel\n", pixels, e, e/time.Duration(pixels))
+	f, err := os.Create(outimage)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer f.Close()
+	if err = png.Encode(f, img); err != nil {
+		log.Fatalln(err)
 	}
 }
 
