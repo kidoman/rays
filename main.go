@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"github.com/kid0m4n/gorays/vector"
@@ -47,12 +46,10 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	header := fmt.Sprintf("P6 %v %v 255 ", *width, *height)
-	headerLen := len([]byte(header))
-	fileLen := headerLen + 3**width**height // Lenght of header + 3 bytes per pixel
+	fmt.Printf("P6 %v %v 255 ", *width, *height)
 
-	buf := &bytes.Buffer{}
-	buf.Grow(fileLen)
+	bytes := make([]byte, 3**width**height)
+	k := 0
 
 	g := vector.Vector{X: -5.5, Y: -16, Z: 0}.Normalize()
 	a := vector.Vector{X: 0, Y: 0, Z: 1}.CrossProduct(g).Normalize().Scale(0.002)
@@ -70,11 +67,15 @@ func main() {
 				p = sampler(orig, dir).Scale(3.5).Add(p)
 			}
 
-			buf.Write([]byte{byte(p.X), byte(p.Y), byte(p.Z)})
+			bytes[k] = byte(p.X)
+			bytes[k+1] = byte(p.Y)
+			bytes[k+2] = byte(p.Z)
+
+			k += 3
 		}
 	}
 
-	if n, err := os.Stdout.Write(buf.Bytes()); n != buf.Len() || err != nil {
+	if _, err := os.Stdout.Write(bytes); err != nil {
 		log.Panic(err)
 	}
 }
