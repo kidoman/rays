@@ -10,5 +10,5 @@ How to use
 ==========
 
 * go get github.com/kid0m4n/gorays
-* gorays > rays.ppm
-* open rays.ppm (helps to have Gimp installed)
+* gorays
+* open rays.png
