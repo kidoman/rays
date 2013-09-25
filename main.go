@@ -84,15 +84,16 @@ func main() {
 
 	rows := make(chan row, *height)
 	wg := &sync.WaitGroup{}
-	startWorkers(runtime.NumCPU(), &a, &b, &c, bytes, rows, wg)
-
-	for y := (*height - 1); y >= 0; y-- {
+	for i := 0; i < runtime.NumCPU(); i++ {
 		wg.Add(1)
-		rows <- row(y)
+		go worker(&a, &b, &c, bytes, rows, wg)
 	}
 
-	wg.Wait()
+	for y := (*height - 1); y >= 0; y-- {
+		rows <- row(y)
+	}
 	close(rows)
+	wg.Wait()
 
 	if _, err := os.Stdout.Write(bytes); err != nil {
 		log.Panic(err)
@@ -101,18 +102,10 @@ func main() {
 
 type row int
 
-func startWorkers(count int, a, b, c *vector.Vector, bytes []byte, rows <-chan row, wg *sync.WaitGroup) {
-	for i := 0; i < count; i++ {
-		go func() {
-			for {
-				r, ok := <-rows
-				if !ok {
-					return
-				}
-				renderRow(a, b, c, bytes, r)
-				wg.Done()
-			}
-		}()
+func worker(a, b, c *vector.Vector, bytes []byte, rows <-chan row, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for r := range rows {
+		renderRow(a, b, c, bytes, r)
 	}
 }
 
