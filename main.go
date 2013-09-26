@@ -58,10 +58,11 @@ var (
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	width      = flag.Int("width", 512, "width of the rendered image")
 	height     = flag.Int("height", 512, "height of the rendered image")
+	procs      = flag.Int("procs", runtime.NumCPU(), "numbers of parallel renders")
 )
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
+	runtime.GOMAXPROCS(*procs)
 	flag.Parse()
 
 	if *cpuprofile != "" {
@@ -71,6 +72,10 @@ func main() {
 		}
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
+	}
+
+	if *procs < 1 {
+		log.Fatalf("Procs (%v) needs to be >= 1", *procs)
 	}
 
 	fmt.Printf("P6 %v %v 255 ", *width, *height)
@@ -84,7 +89,7 @@ func main() {
 
 	rows := make(chan row, *height)
 	wg := &sync.WaitGroup{}
-	for i := 0; i < runtime.NumCPU(); i++ {
+	for i := 0; i < *procs; i++ {
 		wg.Add(1)
 		go worker(&a, &b, &c, bytes, rows, wg)
 	}
