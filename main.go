@@ -165,8 +165,6 @@ func sampler(orig, dir vector.Vector) vector.Vector {
 		sf = 1.0
 	}
 
-	p := math.Pow(l.DotProduct(r.Scale(sf)), 99)
-
 	if st == missDownward {
 		h = h.Scale(0.2)
 		fc := vector.Vector{X: 3, Y: 3, Z: 3}
@@ -175,6 +173,15 @@ func sampler(orig, dir vector.Vector) vector.Vector {
 		}
 		return fc.Scale(b*0.2 + 0.1)
 	}
+
+	p := l.DotProduct(r.Scale(sf))
+	p33 := p * p    // p ** 2
+	p33 = p33 * p33 // p ** 4
+	p33 = p33 * p33 // p ** 8
+	p33 = p33 * p33 // p ** 16
+	p33 = p33 * p33 // p ** 32
+	p33 = p33 * p   // p ** 33
+	p = p33 * p33 * p33
 
 	return vector.Vector{X: p, Y: p, Z: p}.Add(sampler(h, r).Scale(0.5))
 }
