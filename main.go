@@ -139,7 +139,10 @@ func sampler(orig, dir vector.Vector) vector.Vector {
 	st, dist, bounce := tracer(orig, dir)
 
 	if st == missUpward {
-		return vector.Vector{X: 0.7, Y: 0.6, Z: 1}.Scale(math.Pow(1-dir.Z, 4))
+		p := 1 - dir.Z
+		p = p * p
+		p = p * p
+		return vector.Vector{X: 0.7, Y: 0.6, Z: 1}.Scale(p)
 	}
 
 	h := orig.Add(dir.Scale(dist))
