@@ -137,6 +137,7 @@ func renderRow(a, b, c *vector.Vector, bytes []byte, r row) {
 
 func sampler(orig, dir vector.Vector) vector.Vector {
 	st, dist, bounce := tracer(orig, dir)
+	obounce := bounce
 
 	if st == missUpward {
 		p := 1 - dir.Z
@@ -147,7 +148,6 @@ func sampler(orig, dir vector.Vector) vector.Vector {
 
 	h := orig.Add(dir.Scale(dist))
 	l := vector.Vector{X: 9 + Rand(), Y: 9 + Rand(), Z: 16}.Add(h.Scale(-1)).Normalize()
-	r := dir.Add(bounce.Scale(bounce.DotProduct(dir.Scale(-2))))
 
 	b := l.DotProduct(bounce)
 
@@ -173,6 +173,8 @@ func sampler(orig, dir vector.Vector) vector.Vector {
 		}
 		return fc.Scale(b*0.2 + 0.1)
 	}
+
+	r := dir.Add(obounce.Scale(obounce.DotProduct(dir.Scale(-2))))
 
 	p := l.DotProduct(r.Scale(sf))
 	p33 := p * p    // p ** 2
