@@ -109,14 +109,7 @@ func main() {
 
 type row int
 
-func worker(a, b, c *vector.Vector, bytes []byte, rows <-chan row, wg *sync.WaitGroup) {
-	defer wg.Done()
-	for r := range rows {
-		renderRow(a, b, c, bytes, r)
-	}
-}
-
-func renderRow(a, b, c *vector.Vector, bytes []byte, r row) {
+func (r row) render(a, b, c *vector.Vector, bytes []byte) {
 	k := (*height - int(r) - 1) * 3 * *width
 
 	for x := (*width - 1); x >= 0; x-- {
@@ -134,6 +127,13 @@ func renderRow(a, b, c *vector.Vector, bytes []byte, r row) {
 		bytes[k+2] = byte(p.Z)
 
 		k += 3
+	}
+}
+
+func worker(a, b, c *vector.Vector, bytes []byte, rows <-chan row, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for r := range rows {
+		r.render(a, b, c, bytes)
 	}
 }
 
