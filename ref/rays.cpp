@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <list>
 
 typedef int i;       //Save space by using 'i' instead of 'int'
 typedef float f;     //Save even more space by using 'f' instead of 'float'
@@ -17,7 +18,36 @@ struct v {
   v operator!(){return *this*(1 /sqrt(*this%*this));} // Used later for normalizing the vector
 };
 
-i G[]={31768, 33316, 66114, 67138, 65572, 65560, 33792, 30720, 0};
+const char *art[] = {
+  "                   ",
+  "    1111           ",
+  "   1    1          ",
+  "  1           11   ",
+  "  1          1  1  ",
+  "  1     11  1    1 ",
+  "  1      1  1    1 ",
+  "   1     1   1  1  ",
+  "    11111     11   "
+};
+
+struct object {
+  i k,j;
+  object(i x,i y){k=x;j=y;}
+};
+
+std::list<object> objects;
+
+void F() {
+  i nr = sizeof(art) / sizeof(char *),
+  nc = strlen(art[0]);
+  for (int k = nc - 1; k >= 0; k--) {
+    for (int j = nr - 1; j >= 0; j--) {
+      if (art[j][nc - 1 - k] != ' ') {
+        objects.push_back(object(k, nr - 1 - j));
+      }
+    }
+  }
+}
 
 unsigned int seed = ~0;
 
@@ -41,11 +71,11 @@ i T(v o,v d,f& t,v& n) {
   if(.01<p)
     t=p,n=v(0,0,1),m=1;
 
-  //The world is encoded in G, with 9 lines and 19 columns
-  for(i k=19;k--;)  //For each columns of objects
-  for(i j=9;j--;)   //For each line on that columns
+  std::list<object>::iterator it;
 
-  if(G[j]&1<<k) { //For this line j, is there a sphere at column i ?
+  for (it = objects.begin(); it != objects.end(); ++it) {
+    i k = it->k,
+    j = it->j;
 
     // There is a sphere but does the ray hits it ?
     v p=o+v(-k,3,-j-4);
@@ -120,6 +150,8 @@ v S(v o,v d) {
 // The main function. It generates a PPM image to stdout.
 // Usage of the program is hence: ./card > erk.ppm
 i main() {
+  F();
+
   printf("P6 512 512 255 "); // The PPM Header is issued
 
   // The '!' are for normalizing each vectors with ! operator.
