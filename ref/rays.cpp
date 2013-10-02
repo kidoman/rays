@@ -19,8 +19,15 @@ struct v {
 
 i G[]={31768, 33316, 66114, 67138, 65572, 65560, 33792, 30720, 0};
 
-// Random generator, return a float within range [0-1]
-f R(){return(f)rand()/RAND_MAX;}
+unsigned int seed = ~0;
+
+f R() {
+  seed += seed;
+  seed ^= 1;
+  if ((int)seed < 0)
+    seed ^= 0x88888eef;
+  return (f)(seed % 95) / (f)95;
+}
 
 //The intersection test for line [o,v].
 // Return 2 if a hit was found (and also return distance t and bouncing ray n).
