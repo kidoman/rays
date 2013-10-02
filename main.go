@@ -31,11 +31,13 @@ type object struct {
 }
 
 func makeObjects() []object {
-	objects := make([]object, 0, len(art)*len(art[0]))
-	for k := 18; k >= 0; k-- {
-		for j := 8; j >= 0; j-- {
-			if string(art[j][18-k]) != " " {
-				objects = append(objects, object{k: k, j: 8 - j})
+	nr := len(art)
+	nc := len(art[0])
+	objects := make([]object, 0, nr*nc)
+	for k := nc - 1; k >= 0; k-- {
+		for j := nr - 1; j >= 0; j-- {
+			if art[j][nc-1-k] != ' ' {
+				objects = append(objects, object{k: k, j: nr - 1 - j})
 			}
 		}
 	}
