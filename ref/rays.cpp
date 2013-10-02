@@ -149,10 +149,20 @@ v S(v o,v d) {
 
 // The main function. It generates a PPM image to stdout.
 // Usage of the program is hence: ./card > erk.ppm
-i main() {
+i main(int argc, char **argv) {
   F();
 
-  printf("P6 512 512 255 "); // The PPM Header is issued
+  i w = 512,
+  h = 512;
+
+  if (argc > 1) {
+    w = atoi(argv[1]);
+  }
+  if (argc > 2) {
+    h = atoi(argv[2]);
+  }
+
+  printf("P6 %d %d 255 ", w, h); // The PPM Header is issued
 
   // The '!' are for normalizing each vectors with ! operator.
   v g=!v(-5.5,-16,0),       // Camera direction
@@ -160,11 +170,12 @@ i main() {
     b=!(g^a)*.002,        // The right vector, obtained via traditional cross-product
     c=(a+b)*-256+g;       // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
 
-  char bytes[3*512*512];
+  i s = 3*w*h;
+  char *bytes = new char[s];
   int k = 0;
 
-  for(i y=512;y--;)    //For each column
-  for(i x=512;x--;) {   //For each pixel in a line
+  for(i y=h;y--;)    //For each column
+  for(i x=w;x--;) {   //For each pixel in a line
     //Reuse the vector class to store not XYZ but a RGB pixel color
     v p(13,13,13);     // Default pixel color is almost pitch black
 
@@ -186,5 +197,6 @@ i main() {
     bytes[k++] = (char)p.z;
   }
 
-  fwrite(bytes, 1, sizeof(bytes), stdout);
+  fwrite(bytes, 1, s, stdout);
+  delete [] bytes;
 }
