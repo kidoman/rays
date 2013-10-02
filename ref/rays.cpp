@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <list>
+#include <cstring>
 
 //Define a vector class with constructor and operator: 'v'
 struct vector {
