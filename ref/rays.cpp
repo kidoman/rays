@@ -63,10 +63,11 @@ i T(v o,v d,f& t,v& n) {
 // a ray passing by point o (Origin) and d (Direction)
 v S(v o,v d) {
   f t;
-  v n;
+  v n, on;
 
   //Search for an intersection ray Vs World.
   i m=T(o,d,t,n);
+  on = n;
 
   if(!m) // m==0
     //No sphere found and the ray goes upward: Generate a sky color
@@ -75,8 +76,7 @@ v S(v o,v d) {
   //A sphere was maybe hit.
 
   v h=o+d*t,                    // h = intersection coordinate
-  l=!(v(9+R(),9+R(),16)+h*-1),  // 'l' = direction to light (with random delta for soft-shadows).
-  r=d+n*(n%d*-2);               // r = The half-vector
+  l=!(v(9+R(),9+R(),16)+h*-1);  // 'l' = direction to light (with random delta for soft-shadows).
 
   //Calculated the lambertian factor
   f b=l%n;
@@ -85,13 +85,22 @@ v S(v o,v d) {
   if(b<0||T(h,l,t,n))
     b=0;
 
-  // Calculate the color 'p' with diffuse and specular component
-  f p=pow(l%r*(b>0),99);
-
   if(m&1) {   //m == 1
     h=h*.2; //No sphere was hit and the ray was going downward: Generate a floor color
     return((i)(ceil(h.x)+ceil(h.y))&1?v(3,1,1):v(3,3,3))*(b*.2+.1);
   }
+
+  v r=d+on*(on%d*-2);               // r = The half-vector
+
+  // Calculate the color 'p' with diffuse and specular component
+  f p=l%r*(b>0);
+  f p33 = p*p;
+  p33 = p33*p33;
+  p33 = p33*p33;
+  p33 = p33*p33;
+  p33 = p33*p33;
+  p33 = p33*p;
+  p = p33*p33*p33;
 
   //m == 2 A sphere was hit. Cast an ray bouncing from the sphere surface.
   return v(p,p,p)+S(h,r)*.5; //Attenuate color by 50% since it is bouncing (* .5)
