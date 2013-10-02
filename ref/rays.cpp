@@ -69,9 +69,13 @@ v S(v o,v d) {
   i m=T(o,d,t,n);
   on = n;
 
-  if(!m) // m==0
+  if(!m) { // m==0
     //No sphere found and the ray goes upward: Generate a sky color
-    return v(.7,.6,1)*pow(1-d.z,4);
+    f p = 1-d.z;
+    p = p*p;
+    p = p*p;
+    return v(.7,.6,1)*p;
+  }
 
   //A sphere was maybe hit.
 
