@@ -121,6 +121,9 @@ i main() {
     b=!(g^a)*.002,        // The right vector, obtained via traditional cross-product
     c=(a+b)*-256+g;       // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
 
+  char bytes[3*512*512];
+  int k = 0;
+
   for(i y=512;y--;)    //For each column
   for(i x=512;x--;) {   //For each pixel in a line
     //Reuse the vector class to store not XYZ but a RGB pixel color
@@ -139,6 +142,10 @@ i main() {
       )*3.5+p; // +p for color accumulation
     }
 
-    printf("%c%c%c",(i)p.x,(i)p.y,(i)p.z);
+    bytes[k++] = (char)p.x;
+    bytes[k++] = (char)p.y;
+    bytes[k++] = (char)p.z;
   }
+
+  fwrite(bytes, 1, sizeof(bytes), stdout);
 }
