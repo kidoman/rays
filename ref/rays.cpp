@@ -147,12 +147,19 @@ int main(int argc, char **argv) {
   F();
 
   int w = 512, h = 512;
+  int num_threads = std::thread::hardware_concurrency();
+  if (num_threads==0)
+    //8 threads is a reasonable assumption if we don't know how many cores there are
+    num_threads=8;
 
   if (argc > 1) {
     w = atoi(argv[1]);
   }
   if (argc > 2) {
     h = atoi(argv[2]);
+  }
+  if (argc > 3) {
+    num_threads = atoi(argv[3]);
   }
 
   printf("P6 %d %d 255 ", w, h); // The PPM Header is issued
@@ -193,11 +200,6 @@ int main(int argc, char **argv) {
       }
     }
   };
-
-  int num_threads=std::thread::hardware_concurrency();
-  if (num_threads==0)
-    //8 threads is a reasonable assumption if we don't know how many cores there are
-    num_threads=8;
 
   std::mt19937 rgen;
   std::vector<std::thread> threads;
