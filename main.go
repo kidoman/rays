@@ -223,10 +223,14 @@ func tracer(orig, dir vector.Vector) (st status, dist float64, bounce vector.Vec
 
 			if s < dist && s > 0.01 {
 				dist = s
-				bounce = p.Add(dir.Scale(dist)).Normalize()
+				bounce = p // We can lazy compute bounce based on value of p
 				st = hit
 			}
 		}
+	}
+
+	if st == hit {
+		bounce = bounce.Add(dir.Scale(dist)).Normalize()
 	}
 
 	return
