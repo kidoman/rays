@@ -3,7 +3,7 @@
 #include <math.h>
 #include <cstring>
 #include <random>
-#include <future>
+#include <thread>
 #include <vector>
 
 //Define a vector class with constructor and operator: 'v'
@@ -15,7 +15,7 @@ struct vector {
   vector(){}                                  //Empty constructor
   vector operator^(vector r){return vector(y*r.z-z*r.y,z*r.x-x*r.z,x*r.y-y*r.x);} //Cross-product
   vector(float a,float b,float c){x=a;y=b;z=c;}            //Constructor
-  vector operator!(){return *this*(1 /sqrt(*this%*this));} // Used later for normalizing the vector
+  vector operator!(){return *this*(1/sqrtf(*this%*this));} // Used later for normalizing the vector
 };
 
 const char *art[] = {
@@ -31,8 +31,8 @@ const char *art[] = {
 };
 
 struct object {
-  int k,j;
-  object(int x,int y){k=x;j=y;}
+  float k,j;
+  object(float x,float y){k=x;j=y;}
 };
 
 std::vector<object> objects;
@@ -43,7 +43,7 @@ void F() {
   for (int k = nc - 1; k >= 0; k--) {
     for (int j = nr - 1; j >= 0; j--) {
       if(art[j][nc - 1 - k] != ' ') {
-        objects.push_back(object(k, nr - 1 - j));
+        objects.push_back(object(-k, -(nr - 1 - j)));
       }
     }
   }
@@ -66,20 +66,21 @@ int T(vector o,vector d,float& t,vector& n) {
   int m=0;
   float p=-o.z/d.z;
 
-  if(.01<p)
+  if(.01f<p)
     t=p,n=vector(0,0,1),m=1;
 
-  for (auto& obj : objects) {
+  o=o+vector(0,3,-4);
+  for (auto obj : objects) {
     // There is a sphere but does the ray hits it ?
-    vector p=o+vector(-obj.k,3,-obj.j-4);
-    float b=p%d,c=p%p-1,q=b*b-c;
+    vector p=o+vector(obj.k,0,obj.j);
+    float b=p%d,c=p%p-1,b2=b*b;
 
     // Does the ray hit the sphere ?
-    if(q>0) {
+    if(b2>c) {
       //It does, compute the distance camera-sphere
-      float s=-b-sqrt(q);
+      float q=b2-c, s=-b-sqrtf(q);
 
-      if(s<t && s>.01)
+      if(s<t && s>.01f)
       // So far this is the minimum distance, save it. And also
       // compute the bouncing ray vector into 'n'
       t=s, n=!(p+d*t), m=2;
@@ -104,7 +105,7 @@ vector S(vector o,vector d, unsigned int& seed) {
     float p = 1-d.z;
     p = p*p;
     p = p*p;
-    return vector(.7,.6,1)*p;
+    return vector(.7f,.6f,1)*p;
   }
 
   //A sphere was maybe hit.
@@ -120,8 +121,8 @@ vector S(vector o,vector d, unsigned int& seed) {
     b=0;
 
   if(m&1) {   //m == 1
-    h=h*.2; //No sphere was hit and the ray was going downward: Generate a floor color
-    return((int)(ceil(h.x)+ceil(h.y))&1?vector(3,1,1):vector(3,3,3))*(b*.2+.1);
+    h=h*.2f; //No sphere was hit and the ray was going downward: Generate a floor color
+    return((int)(ceil(h.x)+ceil(h.y))&1?vector(3,1,1):vector(3,3,3))*(b*.2f+.1f);
   }
 
   vector r=d+on*(on%d*-2);               // r = The half-vector
@@ -157,20 +158,18 @@ int main(int argc, char **argv) {
   printf("P6 %d %d 255 ", w, h); // The PPM Header is issued
 
   // The '!' are for normalizing each vectors with ! operator.
-  vector g=!vector(-5.5,-16,0),       // Camera direction
-    a=!(vector(0,0,1)^g)*.002, // Camera up vector...Seem Z is pointing up :/ WTF !
-    b=!(g^a)*.002,        // The right vector, obtained via traditional cross-product
+  vector g=!vector(-5.5f,-16,0),       // Camera direction
+    a=!(vector(0,0,1)^g)*.002f, // Camera up vector...Seem Z is pointing up :/ WTF !
+    b=!(g^a)*.002f,        // The right vector, obtained via traditional cross-product
     c=(a+b)*-256+g;       // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
 
   unsigned int s = 3*w*h;
   char *bytes = new char[s];
 
-  std::mt19937 rgen;
-  std::vector<std::future<void>> wg;
-
-  for(int y=h;y--;) {    //For each row
-    wg.push_back(std::async(std::launch::async, [&, y](unsigned int seed) {
+  auto lambda=[&](unsigned int seed, int offset, int jump) {
+    for (int y=offset; y<h; y+=jump) {    //For each row
       unsigned int k = (h - y - 1) * w * 3;
+
       for(int x=w;x--;) {   //For each pixel in a line
         //Reuse the vector class to store not XYZ but a RGB pixel color
         vector p(13,13,13);     // Default pixel color is almost pitch black
@@ -178,24 +177,35 @@ int main(int argc, char **argv) {
         //Cast 64 rays per pixel (For blur (stochastic sampling) and soft-shadows.
         for(int r=64;r--;) {
           // The delta to apply to the origin of the view (For Depth of View blur).
-          vector t=a*(R(seed)-.5)*99+b*(R(seed)-.5)*99; // A little bit of delta up/down and left/right
+          vector t=a*(R(seed)-.5f)*99+b*(R(seed)-.5f)*99; // A little bit of delta up/down and left/right
 
           // Set the camera focal point vector(17,16,8) and Cast the ray
           // Accumulate the color returned in the p variable
           p=S(vector(17,16,8)+t, //Ray Origin
           !(t*-1+(a*(R(seed)+x)+b*(y+R(seed))+c)*16) // Ray Direction with random deltas
                                          // for stochastic sampling
-          , seed)*3.5+p; // +p for color accumulation
+          , seed)*3.5f+p; // +p for color accumulation
         }
 
         bytes[k++] = (char)p.x;
         bytes[k++] = (char)p.y;
         bytes[k++] = (char)p.z;
       }
-    }, rgen()));
+    }
+  };
+
+  int num_threads=std::thread::hardware_concurrency();
+  if (num_threads==0)
+    //8 threads is a reasonable assumption if we don't know how many cores there are
+    num_threads=8;
+
+  std::mt19937 rgen;
+  std::vector<std::thread> threads;
+  for(int i=0;i<num_threads;++i) {
+    threads.emplace_back(lambda, rgen(), i, num_threads);
   }
-  for(auto& w : wg) {
-    w.wait();
+  for(auto& t : threads) {
+    t.join();
   }
 
   fwrite(bytes, 1, s, stdout);
