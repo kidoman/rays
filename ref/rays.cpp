@@ -41,7 +41,7 @@ void F() {
   for (int k = nc - 1; k >= 0; k--) {
     for (int j = nr - 1; j >= 0; j--) {
       if(art[j][nc - 1 - k] != ' ') {
-        objects.push_back(object(k, nr - 1 - j));
+        objects.push_back(object(-k, -(nr - 1 - j)));
       }
     }
   }
@@ -76,7 +76,7 @@ int T(vector o,vector d,float& t,vector& n) {
     j = it->j;
 
     // There is a sphere but does the ray hits it ?
-    vector p=o+vector(-k,3,-(j+4));
+    vector p=o+vector(k,3,j-4);
     float b=p%d,c=p%p-1,b2=b*b;
 
     // Does the ray hit the sphere ?
