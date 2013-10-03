@@ -42,17 +42,15 @@ func makeObjects() []vector.Vector {
 	return objects
 }
 
-type randFn func() float64
-
-func makeRand(seed uint32) randFn {
-	return func() float64 {
-		seed += seed
-		seed ^= 1
-		if int32(seed) < 0 {
-			seed ^= 0x88888eef
-		}
-		return float64(seed%95) / float64(95)
+func rnd(s *uint32) float64 {
+	ss := *s
+	ss += ss
+	ss ^= 1
+	if int32(ss) < 0 {
+		ss ^= 0x88888eef
 	}
+	*s = ss
+	return float64(*s%95) / float64(95)
 }
 
 var (
@@ -94,10 +92,10 @@ func main() {
 		rows <- row(y)
 	}
 
-	wg := &sync.WaitGroup{}
+	var wg sync.WaitGroup
 	wg.Add(*procs)
 	for i := 0; i < *procs; i++ {
-		go worker(&a, &b, &c, bytes, rows, wg)
+		go worker(a, b, c, bytes, rows, &wg)
 	}
 
 	close(rows)
@@ -110,17 +108,17 @@ func main() {
 
 type row int
 
-func (r row) render(a, b, c *vector.Vector, bytes []byte, rnd randFn) {
+func (r row) render(a, b, c vector.Vector, bytes []byte, seed *uint32) {
 	k := (*height - int(r) - 1) * 3 * *width
 
 	for x := (*width - 1); x >= 0; x-- {
 		p := vector.Vector{X: 13, Y: 13, Z: 13}
 
 		for i := 0; i < 64; i++ {
-			t := a.Scale(rnd() - 0.5).Scale(99).Add(b.Scale(rnd() - 0.5).Scale(99))
+			t := a.Scale(rnd(seed) - 0.5).Scale(99).Add(b.Scale(rnd(seed) - 0.5).Scale(99))
 			orig := vector.Vector{X: 17, Y: 16, Z: 8}.Add(t)
-			dir := t.Scale(-1).Add(a.Scale(rnd() + float64(x)).Add(b.Scale(float64(r) + rnd())).Add(*c).Scale(16)).Normalize()
-			p = sampler(orig, dir, rnd).Scale(3.5).Add(p)
+			dir := t.Scale(-1).Add(a.Scale(rnd(seed) + float64(x)).Add(b.Scale(float64(r) + rnd(seed))).Add(c).Scale(16)).Normalize()
+			p = sampler(orig, dir, seed).Scale(3.5).Add(p)
 		}
 
 		bytes[k] = byte(p.X)
@@ -131,18 +129,17 @@ func (r row) render(a, b, c *vector.Vector, bytes []byte, rnd randFn) {
 	}
 }
 
-func worker(a, b, c *vector.Vector, bytes []byte, rows <-chan row, wg *sync.WaitGroup) {
+func worker(a, b, c vector.Vector, bytes []byte, rows <-chan row, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	seed := rand.Uint32()
-	rnd := makeRand(seed)
 
 	for r := range rows {
-		r.render(a, b, c, bytes, rnd)
+		r.render(a, b, c, bytes, &seed)
 	}
 }
 
-func sampler(orig, dir vector.Vector, rnd randFn) vector.Vector {
+func sampler(orig, dir vector.Vector, seed *uint32) vector.Vector {
 	st, dist, bounce := tracer(orig, dir)
 	obounce := bounce
 
@@ -154,7 +151,7 @@ func sampler(orig, dir vector.Vector, rnd randFn) vector.Vector {
 	}
 
 	h := orig.Add(dir.Scale(dist))
-	l := vector.Vector{X: 9 + rnd(), Y: 9 + rnd(), Z: 16}.Add(h.Scale(-1)).Normalize()
+	l := vector.Vector{X: 9 + rnd(seed), Y: 9 + rnd(seed), Z: 16}.Add(h.Scale(-1)).Normalize()
 
 	b := l.DotProduct(bounce)
 
@@ -190,7 +187,7 @@ func sampler(orig, dir vector.Vector, rnd randFn) vector.Vector {
 	p33 = p33 * p   // p ** 33
 	p = p33 * p33 * p33
 
-	return vector.Vector{X: p, Y: p, Z: p}.Add(sampler(h, r, rnd).Scale(0.5))
+	return vector.Vector{X: p, Y: p, Z: p}.Add(sampler(h, r, seed).Scale(0.5))
 }
 
 type status int
