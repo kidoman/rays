@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <list>
 #include <cstring>
 #include <random>
 #include <future>
@@ -36,7 +35,7 @@ struct object {
   object(int x,int y){k=x;j=y;}
 };
 
-std::list<object> objects;
+std::vector<object> objects;
 
 void F() {
   int nr = sizeof(art) / sizeof(char *),
@@ -70,7 +69,7 @@ int T(vector o,vector d,float& t,vector& n) {
   if(.01<p)
     t=p,n=vector(0,0,1),m=1;
 
-  std::list<object>::iterator it;
+  std::vector<object>::iterator it;
 
   for (it = objects.begin(); it != objects.end(); ++it) {
     int k = it->k,
