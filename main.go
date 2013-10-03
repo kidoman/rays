@@ -156,18 +156,16 @@ func sampler(orig, dir vector.Vector, rnd randFn) vector.Vector {
 
 	b := l.DotProduct(bounce)
 
+	sf := 1.0
 	if b < 0 {
 		b = 0
+		sf = 0
 	} else {
 		var st status
 		if st, dist, bounce = tracer(h, l); st != missUpward {
 			b = 0
+			sf = 0
 		}
-	}
-
-	var sf float64
-	if b > 0 {
-		sf = 1.0
 	}
 
 	if st == missDownward {
