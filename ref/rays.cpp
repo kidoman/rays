@@ -29,8 +29,8 @@ const char *art[] = {
 };
 
 struct object {
-  int k,j;
-  object(int x,int y){k=x;j=y;}
+  float k,j;
+  object(float x,float y){k=x;j=y;}
 };
 
 std::list<object> objects;
@@ -72,7 +72,7 @@ int T(vector o,vector d,float& t,vector& n) {
   std::list<object>::iterator it;
 
   for (it = objects.begin(); it != objects.end(); ++it) {
-    int k = it->k,
+    float k = it->k,
     j = it->j;
 
     // There is a sphere but does the ray hits it ?
