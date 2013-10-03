@@ -77,12 +77,12 @@ int T(vector o,vector d,float& t,vector& n) {
 
     // There is a sphere but does the ray hits it ?
     vector p=o+vector(-k,3,-(j+4));
-    float b=p%d,c=p%p-1,q=b*b-c;
+    float b=p%d,c=p%p-1,b2=b*b;
 
     // Does the ray hit the sphere ?
-    if(q>0) {
+    if(b2>c) {
       //It does, compute the distance camera-sphere
-      float s=-b-sqrtf(q);
+      float q=b2-c, s=-b-sqrtf(q);
 
       if(s<t && s>.01f)
       // So far this is the minimum distance, save it. And also
