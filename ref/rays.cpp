@@ -69,8 +69,6 @@ int T(vector o,vector d,float& t,vector& n) {
   if(.01<p)
     t=p,n=vector(0,0,1),m=1;
 
-  std::vector<object>::iterator it;
-
   for (auto& obj : objects) {
     // There is a sphere but does the ray hits it ?
     vector p=o+vector(-obj.k,3,-obj.j-4);
