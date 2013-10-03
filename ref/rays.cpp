@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <list>
 #include <cstring>
+#include <random>
+#include <future>
+#include <vector>
 
 //Define a vector class with constructor and operator: 'v'
 struct vector {
@@ -33,7 +35,7 @@ struct object {
   object(float x,float y){k=x;j=y;}
 };
 
-std::list<object> objects;
+std::vector<object> objects;
 
 void F() {
   int nr = sizeof(art) / sizeof(char *),
@@ -47,9 +49,7 @@ void F() {
   }
 }
 
-unsigned int seed = ~0;
-
-float R() {
+float R(unsigned int& seed) {
   seed += seed;
   seed ^= 1;
   if ((int)seed < 0)
@@ -69,15 +69,10 @@ int T(vector o,vector d,float& t,vector& n) {
   if(.01f<p)
     t=p,n=vector(0,0,1),m=1;
 
-  std::list<object>::iterator it;
-
   o=o+vector(0,3,-4);
-  for (it = objects.begin(); it != objects.end(); ++it) {
-    float k = it->k,
-    j = it->j;
-
+  for (auto obj : objects) {
     // There is a sphere but does the ray hits it ?
-    vector p=o+vector(k,0,j);
+    vector p=o+vector(obj.k,0,obj.j);
     float b=p%d,c=p%p-1,b2=b*b;
 
     // Does the ray hit the sphere ?
@@ -97,7 +92,7 @@ int T(vector o,vector d,float& t,vector& n) {
 
 // (S)ample the world and return the pixel color for
 // a ray passing by point o (Origin) and d (Direction)
-vector S(vector o,vector d) {
+vector S(vector o,vector d, unsigned int& seed) {
   float t;
   vector n, on;
 
@@ -116,7 +111,7 @@ vector S(vector o,vector d) {
   //A sphere was maybe hit.
 
   vector h=o+d*t,                    // h = intersection coordinate
-  l=!(vector(9+R(),9+R(),16)+h*-1);  // 'l' = direction to light (with random delta for soft-shadows).
+  l=!(vector(9+R(seed),9+R(seed),16)+h*-1);  // 'l' = direction to light (with random delta for soft-shadows).
 
   //Calculated the lambertian factor
   float b=l%n;
@@ -143,7 +138,7 @@ vector S(vector o,vector d) {
   p = p33*p33*p33;
 
   //m == 2 A sphere was hit. Cast an ray bouncing from the sphere surface.
-  return vector(p,p,p)+S(h,r)*.5; //Attenuate color by 50% since it is bouncing (* .5)
+  return vector(p,p,p)+S(h,r,seed)*.5; //Attenuate color by 50% since it is bouncing (* .5)
 }
 
 // The main function. It generates a PPM image to stdout.
@@ -171,29 +166,37 @@ int main(int argc, char **argv) {
 
   int s = 3*w*h;
   char *bytes = new char[s];
-  int k = 0;
 
-  for(int y=h;y--;)    //For each column
-  for(int x=w;x--;) {   //For each pixel in a line
-    //Reuse the vector class to store not XYZ but a RGB pixel color
-    vector p(13,13,13);     // Default pixel color is almost pitch black
+  std::mt19937 rgen;
+  std::vector<std::future<void>> wg;
+  for(int y=h;y--;) {    //For each row
+    wg.push_back(std::async(std::launch::async, [&, y](unsigned int seed) {
+      int k = (h - y) * w * 3;
+      for(int x=w;x--;) {   //For each pixel in a line
+        //Reuse the vector class to store not XYZ but a RGB pixel color
+        vector p(13,13,13);     // Default pixel color is almost pitch black
 
-    //Cast 64 rays per pixel (For blur (stochastic sampling) and soft-shadows.
-    for(int r=64;r--;) {
-      // The delta to apply to the origin of the view (For Depth of View blur).
-      vector t=a*(R()-.5f)*99+b*(R()-.5f)*99; // A little bit of delta up/down and left/right
+        //Cast 64 rays per pixel (For blur (stochastic sampling) and soft-shadows.
+        for(int r=64;r--;) {
+          // The delta to apply to the origin of the view (For Depth of View blur).
+          vector t=a*(R(seed)-.5f)*99+b*(R(seed)-.5f)*99; // A little bit of delta up/down and left/right
 
-      // Set the camera focal point vector(17,16,8) and Cast the ray
-      // Accumulate the color returned in the p variable
-      p=S(vector(17,16,8)+t, //Ray Origin
-      !(t*-1+(a*(R()+x)+b*(y+R())+c)*16) // Ray Direction with random deltas
+          // Set the camera focal point vector(17,16,8) and Cast the ray
+          // Accumulate the color returned in the p variable
+          p=S(vector(17,16,8)+t, //Ray Origin
+          !(t*-1+(a*(R(seed)+x)+b*(y+R(seed))+c)*16) // Ray Direction with random deltas
                                          // for stochastic sampling
-      )*3.5f+p; // +p for color accumulation
-    }
+          , seed)*3.5f+p; // +p for color accumulation
+        }
 
-    bytes[k++] = (char)p.x;
-    bytes[k++] = (char)p.y;
-    bytes[k++] = (char)p.z;
+        bytes[k++] = (char)p.x;
+        bytes[k++] = (char)p.y;
+        bytes[k++] = (char)p.z;
+      }
+    }, rgen()));
+  }
+  for(auto& w : wg) {
+    w.wait();
   }
 
   fwrite(bytes, 1, s, stdout);
