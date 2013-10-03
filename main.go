@@ -215,9 +215,10 @@ func tracer(orig, dir vector.Vector) (st status, dist float64, bounce vector.Vec
 		p := orig.Add(objects[i])
 		b := p.DotProduct(dir)
 		c := p.DotProduct(p) - 1
-		q := b*b - c
+		b2 := b * b
 
-		if q > 0 {
+		if b2 > c {
+			q := b2 - c
 			s := -b - math.Sqrt(q)
 
 			if s < dist && s > 0.01 {
