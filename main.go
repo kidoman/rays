@@ -38,7 +38,7 @@ func makeObjects() []object {
 	for k := nc - 1; k >= 0; k-- {
 		for j := nr - 1; j >= 0; j-- {
 			if art[j][nc-1-k] != ' ' {
-				objects = append(objects, object{k: k, j: nr - 1 - j})
+				objects = append(objects, object{k: -k, j: -(nr - 1 - j)})
 			}
 		}
 	}
@@ -218,7 +218,7 @@ func tracer(orig, dir vector.Vector) (st status, dist float64, bounce vector.Vec
 	for _, object := range objects {
 		k, j := object.k, object.j
 
-		p := orig.Add(vector.Vector{X: float64(-k), Y: 3, Z: float64(-j - 4)})
+		p := orig.Add(vector.Vector{X: float64(k), Y: 3, Z: float64(j - 4)})
 		b := p.DotProduct(dir)
 		c := p.DotProduct(p) - 1
 		q := b*b - c
