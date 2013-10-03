@@ -3,7 +3,7 @@
 #include <math.h>
 #include <cstring>
 #include <random>
-#include <future>
+#include <thread>
 #include <vector>
 
 //Define a vector class with constructor and operator: 'v'
@@ -167,11 +167,9 @@ int main(int argc, char **argv) {
   int s = 3*w*h;
   char *bytes = new char[s];
 
-  std::mt19937 rgen;
-  std::vector<std::future<void>> wg;
-  for(int y=h;y--;) {    //For each row
-    wg.push_back(std::async(std::launch::async, [&, y](unsigned int seed) {
-      int k = (h - y) * w * 3;
+  auto lambda=[&](unsigned int seed, int offset, int jump) {
+    for (int y=offset; y<h; y+=jump) {    //For each row
+      int k = (h - y - 1) * w * 3;
       for(int x=w;x--;) {   //For each pixel in a line
         //Reuse the vector class to store not XYZ but a RGB pixel color
         vector p(13,13,13);     // Default pixel color is almost pitch black
@@ -193,10 +191,21 @@ int main(int argc, char **argv) {
         bytes[k++] = (char)p.y;
         bytes[k++] = (char)p.z;
       }
-    }, rgen()));
+    }
+  };
+
+  int num_threads=std::thread::hardware_concurrency();
+  if (num_threads==0)
+    //8 threads is a reasonable assumption if we don't know how many cores there are
+    num_threads=8;
+
+  std::mt19937 rgen;
+  std::vector<std::thread> threads;
+  for(int i=0;i<num_threads;++i) {
+    threads.emplace_back(lambda, rgen(), i, num_threads);
   }
-  for(auto& w : wg) {
-    w.wait();
+  for(auto& t : threads) {
+    t.join();
   }
 
   fwrite(bytes, 1, s, stdout);
