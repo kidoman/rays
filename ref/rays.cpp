@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
           // Accumulate the color returned in the p variable
           p=S(vector(17,16,8)+t, //Ray Origin
           !(t*-1+(a*(R(seed)+x)+b*(y+R(seed))+c)*16) // Ray Direction with random deltas
-                                         // for stochastic sampling
+                                                     // for stochastic sampling
           , seed)*3.5+p; // +p for color accumulation
         }
 
