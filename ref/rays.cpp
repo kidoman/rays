@@ -13,7 +13,7 @@ struct vector {
   vector(){}                                  //Empty constructor
   vector operator^(vector r){return vector(y*r.z-z*r.y,z*r.x-x*r.z,x*r.y-y*r.x);} //Cross-product
   vector(float a,float b,float c){x=a;y=b;z=c;}            //Constructor
-  vector operator!(){return *this*(1 /sqrt(*this%*this));} // Used later for normalizing the vector
+  vector operator!(){return *this*(1/sqrtf(*this%*this));} // Used later for normalizing the vector
 };
 
 const char *art[] = {
@@ -66,7 +66,7 @@ int T(vector o,vector d,float& t,vector& n) {
   int m=0;
   float p=-o.z/d.z;
 
-  if(.01<p)
+  if(.01f<p)
     t=p,n=vector(0,0,1),m=1;
 
   std::list<object>::iterator it;
@@ -76,15 +76,15 @@ int T(vector o,vector d,float& t,vector& n) {
     j = it->j;
 
     // There is a sphere but does the ray hits it ?
-    vector p=o+vector(-k,3,-j-4);
+    vector p=o+vector(-k,3,-(j+4));
     float b=p%d,c=p%p-1,q=b*b-c;
 
     // Does the ray hit the sphere ?
     if(q>0) {
       //It does, compute the distance camera-sphere
-      float s=-b-sqrt(q);
+      float s=-b-sqrtf(q);
 
-      if(s<t && s>.01)
+      if(s<t && s>.01f)
       // So far this is the minimum distance, save it. And also
       // compute the bouncing ray vector into 'n'
       t=s, n=!(p+d*t), m=2;
@@ -109,7 +109,7 @@ vector S(vector o,vector d) {
     float p = 1-d.z;
     p = p*p;
     p = p*p;
-    return vector(.7,.6,1)*p;
+    return vector(.7f,.6f,1)*p;
   }
 
   //A sphere was maybe hit.
@@ -125,8 +125,8 @@ vector S(vector o,vector d) {
     b=0;
 
   if(m&1) {   //m == 1
-    h=h*.2; //No sphere was hit and the ray was going downward: Generate a floor color
-    return((int)(ceil(h.x)+ceil(h.y))&1?vector(3,1,1):vector(3,3,3))*(b*.2+.1);
+    h=h*.2f; //No sphere was hit and the ray was going downward: Generate a floor color
+    return((int)(ceil(h.x)+ceil(h.y))&1?vector(3,1,1):vector(3,3,3))*(b*.2f+.1f);
   }
 
   vector r=d+on*(on%d*-2);               // r = The half-vector
@@ -163,9 +163,9 @@ int main(int argc, char **argv) {
   printf("P6 %d %d 255 ", w, h); // The PPM Header is issued
 
   // The '!' are for normalizing each vectors with ! operator.
-  vector g=!vector(-5.5,-16,0),       // Camera direction
-    a=!(vector(0,0,1)^g)*.002, // Camera up vector...Seem Z is pointing up :/ WTF !
-    b=!(g^a)*.002,        // The right vector, obtained via traditional cross-product
+  vector g=!vector(-5.5f,-16,0),       // Camera direction
+    a=!(vector(0,0,1)^g)*.002f, // Camera up vector...Seem Z is pointing up :/ WTF !
+    b=!(g^a)*.002f,        // The right vector, obtained via traditional cross-product
     c=(a+b)*-256+g;       // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
 
   int s = 3*w*h;
@@ -180,14 +180,14 @@ int main(int argc, char **argv) {
     //Cast 64 rays per pixel (For blur (stochastic sampling) and soft-shadows.
     for(int r=64;r--;) {
       // The delta to apply to the origin of the view (For Depth of View blur).
-      vector t=a*(R()-.5)*99+b*(R()-.5)*99; // A little bit of delta up/down and left/right
+      vector t=a*(R()-.5f)*99+b*(R()-.5f)*99; // A little bit of delta up/down and left/right
 
       // Set the camera focal point vector(17,16,8) and Cast the ray
       // Accumulate the color returned in the p variable
       p=S(vector(17,16,8)+t, //Ray Origin
       !(t*-1+(a*(R()+x)+b*(y+R())+c)*16) // Ray Direction with random deltas
                                          // for stochastic sampling
-      )*3.5+p; // +p for color accumulation
+      )*3.5f+p; // +p for color accumulation
     }
 
     bytes[k++] = (char)p.x;
