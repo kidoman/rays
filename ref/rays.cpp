@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
   std::vector<std::future<void>> wg;
   for(int y=h;y--;) {    //For each row
     wg.push_back(std::async(std::launch::async, [&, y](unsigned int seed) {
-      int k = (h - y) * w * 3;
+      int k = (h - (y+1)) * w * 3;
       for(int x=w;x--;) {   //For each pixel in a line
         //Reuse the vector class to store not XYZ but a RGB pixel color
         vector p(13,13,13);     // Default pixel color is almost pitch black
@@ -184,7 +184,7 @@ int main(int argc, char **argv) {
           // Accumulate the color returned in the p variable
           p=S(vector(17,16,8)+t, //Ray Origin
           !(t*-1+(a*(R(seed)+x)+b*(y+R(seed))+c)*16) // Ray Direction with random deltas
-                                         // for stochastic sampling
+                                                     // for stochastic sampling
           , seed)*3.5+p; // +p for color accumulation
         }
 
