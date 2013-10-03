@@ -27,18 +27,14 @@ var art = []string{
 
 var objects = makeObjects()
 
-type object struct {
-	k, j int
-}
-
-func makeObjects() []object {
+func makeObjects() []vector.Vector {
 	nr := len(art)
 	nc := len(art[0])
-	objects := make([]object, 0, nr*nc)
+	objects := make([]vector.Vector, 0, nr*nc)
 	for k := nc - 1; k >= 0; k-- {
 		for j := nr - 1; j >= 0; j-- {
 			if art[j][nc-1-k] != ' ' {
-				objects = append(objects, object{k: -k, j: -(nr - 1 - j)})
+				objects = append(objects, vector.Vector{X: -float64(k), Y: 3, Z: -float64(nr-1-j) - 4})
 			}
 		}
 	}
@@ -215,10 +211,8 @@ func tracer(orig, dir vector.Vector) (st status, dist float64, bounce vector.Vec
 		st = missDownward
 	}
 
-	for _, object := range objects {
-		k, j := object.k, object.j
-
-		p := orig.Add(vector.Vector{X: float64(k), Y: 3, Z: float64(j - 4)})
+	for i, _ := range objects {
+		p := orig.Add(objects[i])
 		b := p.DotProduct(dir)
 		c := p.DotProduct(p) - 1
 		q := b*b - c
