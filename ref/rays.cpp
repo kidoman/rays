@@ -171,6 +171,7 @@ int main(int argc, char **argv) {
   for(int y=h;y--;) {    //For each row
     wg.push_back(std::async(std::launch::async, [&, y](unsigned int seed) {
       int k = (h - y) * w * 3;
+      unsigned int k = (h - y - 1) * w * 3;
       for(int x=w;x--;) {   //For each pixel in a line
         //Reuse the vector class to store not XYZ but a RGB pixel color
         vector p(13,13,13);     // Default pixel color is almost pitch black
