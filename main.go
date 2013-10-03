@@ -89,15 +89,17 @@ func main() {
 	c := a.Add(b).Scale(-256).Add(g)
 
 	rows := make(chan row, *height)
-	wg := &sync.WaitGroup{}
-	for i := 0; i < *procs; i++ {
-		wg.Add(1)
-		go worker(&a, &b, &c, bytes, rows, wg)
-	}
 
 	for y := (*height - 1); y >= 0; y-- {
 		rows <- row(y)
 	}
+
+	wg := &sync.WaitGroup{}
+	wg.Add(*procs)
+	for i := 0; i < *procs; i++ {
+		go worker(&a, &b, &c, bytes, rows, wg)
+	}
+
 	close(rows)
 	wg.Wait()
 
