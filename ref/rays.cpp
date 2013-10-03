@@ -145,8 +145,7 @@ vector S(vector o,vector d, unsigned int& seed) {
 int main(int argc, char **argv) {
   F();
 
-  int w = 512,
-  h = 512;
+  unsigned int w = 512, h = 512;
 
   if (argc > 1) {
     w = atoi(argv[1]);
@@ -163,14 +162,14 @@ int main(int argc, char **argv) {
     b=!(g^a)*.002,        // The right vector, obtained via traditional cross-product
     c=(a+b)*-256+g;       // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
 
-  int s = 3*w*h;
+  unsigned int s = 3*w*h;
   char *bytes = new char[s];
 
   std::mt19937 rgen;
   std::vector<std::future<void>> wg;
+
   for(int y=h;y--;) {    //For each row
     wg.push_back(std::async(std::launch::async, [&, y](unsigned int seed) {
-      int k = (h - y) * w * 3;
       unsigned int k = (h - y - 1) * w * 3;
       for(int x=w;x--;) {   //For each pixel in a line
         //Reuse the vector class to store not XYZ but a RGB pixel color
