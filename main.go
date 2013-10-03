@@ -88,16 +88,15 @@ func main() {
 
 	rows := make(chan row, *height)
 
-	for y := (*height - 1); y >= 0; y-- {
-		rows <- row(y)
-	}
-
 	var wg sync.WaitGroup
 	wg.Add(*procs)
 	for i := 0; i < *procs; i++ {
 		go worker(a, b, c, bytes, rows, &wg)
 	}
 
+	for y := (*height - 1); y >= 0; y-- {
+		rows <- row(y)
+	}
 	close(rows)
 	wg.Wait()
 
