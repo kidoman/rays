@@ -6,6 +6,7 @@ import (
 	"github.com/kid0m4n/gorays/vector"
 	"log"
 	"math"
+	"math/rand"
 	"os"
 	"runtime"
 	"runtime/pprof"
@@ -45,15 +46,17 @@ func makeObjects() []object {
 	return objects
 }
 
-var seed = ^uint32(0)
+type randFn func() float64
 
-func Rand() float64 {
-	seed += seed
-	seed ^= 1
-	if int32(seed) < 0 {
-		seed ^= 0x88888eef
+func makeRand(seed uint32) randFn {
+	return func() float64 {
+		seed += seed
+		seed ^= 1
+		if int32(seed) < 0 {
+			seed ^= 0x88888eef
+		}
+		return float64(seed%95) / float64(95)
 	}
-	return float64(seed%95) / float64(95)
 }
 
 var (
@@ -109,17 +112,17 @@ func main() {
 
 type row int
 
-func (r row) render(a, b, c *vector.Vector, bytes []byte) {
+func (r row) render(a, b, c *vector.Vector, bytes []byte, rnd randFn) {
 	k := (*height - int(r) - 1) * 3 * *width
 
 	for x := (*width - 1); x >= 0; x-- {
 		p := vector.Vector{X: 13, Y: 13, Z: 13}
 
 		for i := 0; i < 64; i++ {
-			t := a.Scale(Rand() - 0.5).Scale(99).Add(b.Scale(Rand() - 0.5).Scale(99))
+			t := a.Scale(rnd() - 0.5).Scale(99).Add(b.Scale(rnd() - 0.5).Scale(99))
 			orig := vector.Vector{X: 17, Y: 16, Z: 8}.Add(t)
-			dir := t.Scale(-1).Add(a.Scale(Rand() + float64(x)).Add(b.Scale(float64(r) + Rand())).Add(*c).Scale(16)).Normalize()
-			p = sampler(orig, dir).Scale(3.5).Add(p)
+			dir := t.Scale(-1).Add(a.Scale(rnd() + float64(x)).Add(b.Scale(float64(r) + rnd())).Add(*c).Scale(16)).Normalize()
+			p = sampler(orig, dir, rnd).Scale(3.5).Add(p)
 		}
 
 		bytes[k] = byte(p.X)
@@ -132,12 +135,16 @@ func (r row) render(a, b, c *vector.Vector, bytes []byte) {
 
 func worker(a, b, c *vector.Vector, bytes []byte, rows <-chan row, wg *sync.WaitGroup) {
 	defer wg.Done()
+
+	seed := rand.Uint32()
+	rnd := makeRand(seed)
+
 	for r := range rows {
-		r.render(a, b, c, bytes)
+		r.render(a, b, c, bytes, rnd)
 	}
 }
 
-func sampler(orig, dir vector.Vector) vector.Vector {
+func sampler(orig, dir vector.Vector, rnd randFn) vector.Vector {
 	st, dist, bounce := tracer(orig, dir)
 	obounce := bounce
 
@@ -149,7 +156,7 @@ func sampler(orig, dir vector.Vector) vector.Vector {
 	}
 
 	h := orig.Add(dir.Scale(dist))
-	l := vector.Vector{X: 9 + Rand(), Y: 9 + Rand(), Z: 16}.Add(h.Scale(-1)).Normalize()
+	l := vector.Vector{X: 9 + rnd(), Y: 9 + rnd(), Z: 16}.Add(h.Scale(-1)).Normalize()
 
 	b := l.DotProduct(bounce)
 
@@ -187,7 +194,7 @@ func sampler(orig, dir vector.Vector) vector.Vector {
 	p33 = p33 * p   // p ** 33
 	p = p33 * p33 * p33
 
-	return vector.Vector{X: p, Y: p, Z: p}.Add(sampler(h, r).Scale(0.5))
+	return vector.Vector{X: p, Y: p, Z: p}.Add(sampler(h, r, rnd).Scale(0.5))
 }
 
 type status int
