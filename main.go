@@ -63,7 +63,7 @@ var (
 )
 
 func main() {
-	runtime.GOMAXPROCS(*procs)
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Parse()
 
 	if *cpuprofile != "" {
