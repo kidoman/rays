@@ -49,9 +49,9 @@ final class Worker implements Runnable  {
         }
 
         o = o.add(T_CONST_VEC);
-        for (final vector obj : Raycaster.objects) {
+        for(int i = 0; i < Raycaster.objects.length; i++) {
             // There is a sphere but does the ray hits it ?
-            final vector p1 = o.add(obj);
+            final vector p1 = o.add(Raycaster.objects[i]);
             final float b = p1.dot(d), c = p1.dot(p1) - 1, b2 = b * b;
 
             // Does the ray hit the sphere ?

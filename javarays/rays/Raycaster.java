@@ -30,18 +30,22 @@ public final class Raycaster {
 		"    11111     11   ".toCharArray()
 	};
 
-	static Vector<vector> objects = new Vector<>(art.length * art[0].length);
+	static vector[] objects;
 
 	static void F() {
+		final Vector<vector> tmp = new Vector<>(art.length * art[0].length);
+
 		final int nr = art.length;
 		final int nc = art[0].length;
 		for (int k = nc - 1; k >= 0; k--) {
 			for (int j = nr - 1; j >= 0; j--) {
 				if (art[j][nc - 1 - k] != ' ') {
-					objects.add(new vector(-k, 0, -(nr - 1 - j)));
+					tmp.add(new vector(-k, 0, -(nr - 1 - j)));
 				}
 			}
 		}
+
+		objects = tmp.toArray(new vector[0]);
 	}
 
     private static final vector STD_VEC = new vector(0, 0, 1);
