@@ -24,6 +24,6 @@ Go version
 C++ version
 ---
 
-* c++ -std=c++11 -O3 -pthread -o crays ref/rays.cpp
+* c++ -std=c++11 -O3 -Wall -pthread -ffast-math -mtune=native -march=native -o crays c++/main.cpp
 * time ./crays > crays.ppm
 * open crays.ppm
