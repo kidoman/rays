@@ -32,6 +32,7 @@ Currently, the following versions are currently available, and tracked in their 
 
 * Go (optimized, multi-threaded)
 * C++ (optimized, multi-threaded)
+* Java (optimized, multi-threaded)
 
 Please feel free to implement the benchmark (refer to the original C++ version [here](https://gist.github.com/kid0m4n/6680629)) in the language of your choice. All optimizations are welcome but try not to stray away too far from the spirit of the original algorithm. The existing implementations can always act as a litmus test.
 
@@ -54,6 +55,7 @@ Prerequisite
 
 * go 1.2rc1 or later
 * gcc 4.8.1 or later
+* Java 7 or later
 * GIMP for opening the rendered images
 
 Go version
@@ -71,6 +73,15 @@ C++ version
 * c++ -std=c++11 -O3 -Wall -pthread -ffast-math -mtune=native -march=native -o cpprays cpprays/main.cpp
 * time ./cpprays > cpprays.ppm
 * open cpprays.ppm
+
+Java version
+---
+
+* git clone git@github.com:kid0m4n/rays.git
+* cd rays/javarays
+* javac rays/Raycaster.java
+* time java rays.Raycaster
+* open image.ppm
 
 Current Performance
 ===
