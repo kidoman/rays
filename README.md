@@ -14,12 +14,19 @@ Second run with C++ optimized: https://kidoman.com/programming/go-getter-part-2.
 How to use
 ===
 
+Prerequisite
+---
+
+* go 1.2rc1 or later
+* gcc 4.8.1 or later
+* GIMP for opening the rendered images
+
 Go version
 ---
 
 * go get -u github.com/kid0m4n/gorays
 * time gorays > gorays.ppm
-* open gorays.ppm (helps to have Gimp installed)
+* open gorays.ppm
 
 C++ version
 ---
