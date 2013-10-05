@@ -59,12 +59,7 @@ const char *art[] = {
   "    11111     11   "
 };
 
-struct object {
-  float k,j;
-  object(const float &x,const float &y){k=x;j=y;}
-};
-
-static std::vector<object> objects;
+static std::vector<std::tuple<float, float>> objects;
 
 void F() {
   int nr = sizeof(art) / sizeof(char *),
@@ -99,9 +94,9 @@ int T(vector o, const vector &d,float& t,vector& n) {
     t=p,n=vector(0,0,1),m=1;
 
   o=o+vector(0,3,-4);
-  for (auto obj : objects) {
+  for (const auto &obj : objects) {
     // There is a sphere but does the ray hits it ?
-    vector p=o+vector(obj.k,0,obj.j);
+    vector p=o+vector(std::get<0>(obj),0,std::get<1>(obj));
     float b=p.dot(d),
 		  c=p.dot(p)-1,
 		  b2=b*b;
