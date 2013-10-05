@@ -9,13 +9,13 @@
 //Define a vector class with constructor and operator: 'v'
 struct vector {
   float x,y,z;  // Vector has three float attributes.
-  vector operator+(vector r){return vector(x+r.x,y+r.y,z+r.z);} //Vector add
-  vector operator*(float r){return vector(x*r,y*r,z*r);}       //Vector scaling
-  float operator%(vector r){return x*r.x+y*r.y+z*r.z;}    //Vector dot product
+  vector operator+(vector r) const {return vector(x+r.x,y+r.y,z+r.z);} //Vector add
+  vector operator*(float r) const {return vector(x*r,y*r,z*r);}       //Vector scaling
+  float operator%(vector r) const {return x*r.x+y*r.y+z*r.z;}    //Vector dot product
   vector(){}                                  //Empty constructor
-  vector operator^(vector r){return vector(y*r.z-z*r.y,z*r.x-x*r.z,x*r.y-y*r.x);} //Cross-product
+  vector operator^(vector r) const {return vector(y*r.z-z*r.y,z*r.x-x*r.z,x*r.y-y*r.x);} //Cross-product
   vector(float a,float b,float c){x=a;y=b;z=c;}            //Constructor
-  vector operator!(){return *this*(1/sqrtf(*this%*this));} // Used later for normalizing the vector
+  vector operator!() const {return *this*(1/sqrtf(*this%*this));} // Used later for normalizing the vector
 };
 
 struct object {
