@@ -154,21 +154,26 @@ int main(int argc, char **argv) {
 
   objects = makeObjects(art);
 
-  int w = 512, h = 512;
-  int num_threads = std::thread::hardware_concurrency();
-  if (num_threads==0)
-    //8 threads is a reasonable assumption if we don't know how many cores there are
-    num_threads=8;
+  const auto getIntArg = [&](int argIndex, int defaultValue) {
+    if(argc > argIndex) {
+      return std::stoi(argv[argIndex]);
+    }
+    return defaultValue;
+  };
 
-  if (argc > 1) {
-    w = atoi(argv[1]);
-  }
-  if (argc > 2) {
-    h = atoi(argv[2]);
-  }
-  if (argc > 3) {
-    num_threads = atoi(argv[3]);
-  }
+  const auto w = getIntArg(1, 512);
+  const auto h = getIntArg(2, 512);
+  const auto num_threads = [&]() {
+    int x = getIntArg(3, 0);
+    if(x <= 0) {
+      x = std::thread::hardware_concurrency();
+      if(0 == x) {
+        //8 threads is a reasonable assumption if we don't know how many cores there are
+        x = 8;
+      }
+    }
+    return x;
+  }();
 
   printf("P6 %d %d 255 ", w, h); // The PPM Header is issued
 
