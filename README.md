@@ -35,6 +35,11 @@ Please feel free to implement the benchmark (refer to the original C++ version [
 
 Also, optimizations to the existing implementation are obviously welcome. I will regularly update the results based on activity/updates to the code.
 
+Why optimize? Shouldn't we leave it to the compilers to do their best
+---
+
+Optimizing in a particular language also gives you a feel of "how far" you can go when the need arises. Micro optimizations are the root of all evil, no doubt; but not when the subject matter is benchmarking (plus, it doesn't hurt that it makes the process fun)
+
 How to use
 ===
 
@@ -82,4 +87,4 @@ The following have contributed to the project one way or the other:
 * [Tobias Kalbitz](https://github.com/tkalbitz)
 * [Marc Aldorasi](https://github.com/m42a)
 
-Thanks to everyone for all the help given. \_/ :)
+Thanks to everyone for all the help given :)
