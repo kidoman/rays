@@ -34,12 +34,11 @@ final class Worker implements Runnable  {
 		seed = new Random();
 	}
 
-
     //The intersection test for line [o,v].
     // Return 2 if a hit was found (and also return distance t and bouncing ray n).
     // Return 0 if no hit was found but ray goes upward
     // Return 1 if no hit was found but ray goes downward
-    private int T(vector o, final vector d) {
+    private final int T(vector o, final vector d) {
         t = 1e9f;
         int m = 0;
         final float p = -o.z / d.z;
@@ -80,7 +79,7 @@ final class Worker implements Runnable  {
 
     // (S)ample the world and return the pixel color for
     // a ray passing by point o (Origin) and d (Direction)
-    private vector S(final vector o, final vector d) {
+    private final vector S(final vector o, final vector d) {
         // Search for an intersection ray Vs World.
         final int m = T(o, d);
         final vector on = new vector(n);
