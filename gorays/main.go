@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kid0m4n/gorays/go/vector"
+	"github.com/kid0m4n/rays/gorays/vector"
 	"log"
 	"math"
 	"math/rand"
