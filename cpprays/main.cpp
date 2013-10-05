@@ -178,8 +178,7 @@ int main(int argc, char **argv) {
     b=!(g^a)*.002f,        // The right vector, obtained via traditional cross-product
     c=(a+b)*-256+g;       // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
 
-  const int s = 3*w*h;
-  char *bytes = new char[s];
+  std::vector<char> bytes(3 * w * h);
 
   auto lambda=[&](unsigned int seed, int offset, int jump) {
     for (int y=offset; y<h; y+=jump) {    //For each row
@@ -218,6 +217,5 @@ int main(int argc, char **argv) {
     t.join();
   }
 
-  fwrite(bytes, 1, s, stdout);
-  delete [] bytes;
+  fwrite(bytes.data(), sizeof(bytes[0]), bytes.size(), stdout);
 }
