@@ -2,7 +2,6 @@ package rays;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
-import java.util.Random;
 import java.util.Vector;
 
 public final class Raycaster {
@@ -86,7 +85,7 @@ public final class Raycaster {
 
 		final Vector<Thread> threads = new Vector<>();
         for (int i = 0; i < num_threads; ++i) {
-            final Thread thread = new Thread(new Worker(new Random(), i, num_threads));
+            final Thread thread = new Thread(new Worker(i, num_threads));
             thread.start();
             threads.add(thread);
         }

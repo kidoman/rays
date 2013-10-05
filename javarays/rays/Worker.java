@@ -15,6 +15,17 @@ final class Worker implements Runnable  {
     private final vector PATTERN1    = new vector( 3,  1,  1);
     private final vector PATTERN2    = new vector( 3,  3,  3);
 
+    // for stochastic sampling
+    private final Random seed;
+	private final int offset;
+	private final int jump;
+
+	public Worker(final int _offset, final int _jump) {
+		seed = new Random();
+		offset = _offset;
+		jump = _jump;
+	}
+
     private final static class TRes {
         float t;
         vector n;
@@ -57,7 +68,7 @@ final class Worker implements Runnable  {
 
     // (S)ample the world and return the pixel color for
     // a ray passing by point o (Origin) and d (Direction)
-    private vector S(final vector o, final vector d, final Random seed) {
+    private vector S(final vector o, final vector d) {
         final Worker.TRes res = new TRes();
 
         // Search for an intersection ray Vs World.
@@ -102,17 +113,8 @@ final class Worker implements Runnable  {
         p = p33 * p33 * p33;
 
         // m == 2 A sphere was hit. Cast an ray bouncing from the sphere surface.
-        return new vector(p, p, p).add(S(h, r, seed).mul(.5f)); // Attenuate color by 50% since it is bouncing (*.5)
+        return new vector(p, p, p).add(S(h, r).mul(.5f)); // Attenuate color by 50% since it is bouncing (*.5)
     }
-
-
-    Random seed;
-	final int offset;
-	final int jump;
-
-	public Worker(final Random _seed, final int _offset, final int _jump) {
-		seed = _seed; offset = _offset; jump = _jump;
-	}
 
 	@Override
     public void run() {
@@ -142,8 +144,7 @@ final class Worker implements Runnable  {
             // Accumulate the color returned in the p variable
             p = S(S_CONST_VEC.add(t), // Ray Origin
                     t.mul(-1).add((Raycaster.a.mul(seed.nextFloat() + x).add(Raycaster.b.mul(y + seed.nextFloat())).add(Raycaster.c)).mul(16.f)).norm() // Ray Direction with random deltas
-                    // for stochastic sampling
-                    , seed).mul(3.5f).add(p); // +p for color accumulation
+            		).mul(3.5f).add(p); // +p for color accumulation
         }
         return p;
     }
