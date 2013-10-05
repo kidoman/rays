@@ -1,7 +1,6 @@
 package rays;
 
 import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
 import java.util.Vector;
 
 public final class Raycaster {
@@ -74,7 +73,7 @@ public final class Raycaster {
             num_threads = Integer.parseInt(args[2]);
         }
 
-        final BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream("image.ppm"));
+        final BufferedOutputStream stream = new BufferedOutputStream(System.out);
         stream.write("".format("P6 %d %d 255 ", w, h).getBytes());
 
         bytes = new byte[3*w*h];
@@ -92,6 +91,5 @@ public final class Raycaster {
 
         stream.write(bytes);
         stream.flush();
-        stream.close();
     }
 }

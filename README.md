@@ -80,8 +80,8 @@ Java version
 * git clone git@github.com:kid0m4n/rays.git
 * cd rays/javarays
 * javac rays/Raycaster.java
-* time java rays.Raycaster
-* open image.ppm
+* time java rays.Raycaster > javarays.ppm
+* open javarays.ppm
 
 Current Performance
 ===
