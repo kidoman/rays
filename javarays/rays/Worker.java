@@ -6,10 +6,10 @@ import rays.Raycaster.vector;
 
 final class Worker implements Runnable  {
 
-	// Default pixel color is almost pitch black
-	private final vector DEF_COLOR   = new vector(13, 13, 13);
+    // Default pixel color is almost pitch black
+    private final vector DEF_COLOR   = new vector(13, 13, 13);
 
-	private final vector EMPTY_VEC   = new vector();
+    private final vector EMPTY_VEC   = new vector();
     private final vector SKY_VEC     = new vector(.7f, .6f, 1);
     private final vector STD_VEC     = new vector( 0,  0,  1);
     private final vector S_CONST_VEC = new vector(17, 16,  8);
@@ -18,19 +18,19 @@ final class Worker implements Runnable  {
     private final vector PATTERN2    = new vector( 3,  3,  3);
 
     // for stochastic sampling
-	private final int offset;
-	private final int jump;
+    private final int offset;
+    private final int jump;
 
-	private final vector[] objects;
+    private final vector[] objects;
 
-	private float t;
-	private vector n;
+    private float t;
+    private vector n;
 
-	public Worker(final vector[] _objects, final int _offset, final int _jump) {
-		objects = _objects;
-		offset = _offset;
-		jump = _jump;
-	}
+    public Worker(final vector[] _objects, final int _offset, final int _jump) {
+        objects = _objects;
+        offset = _offset;
+        jump = _jump;
+    }
 
     //The intersection test for line [o,v].
     // Return 2 if a hit was found (and also return distance t and bouncing ray n).
@@ -43,9 +43,9 @@ final class Worker implements Runnable  {
 
         n = EMPTY_VEC;
         if (.01f < p) {
-			t = p;
-			n = STD_VEC;
-			m = 1;
+            t = p;
+            n = STD_VEC;
+            m = 1;
         }
 
         o = o.add(T_CONST_VEC);
@@ -61,7 +61,7 @@ final class Worker implements Runnable  {
                 final float q = b2 - c, s = (float) (-b - Math.sqrt(q));
 
                 if (s < t && s > .01f) {
-                	last = p1;
+                    last = p1;
                     t = s;
                     m = 2;
                 }
@@ -69,8 +69,8 @@ final class Worker implements Runnable  {
         }
 
         if(last != null) {
-			n = (last.add(d.mul(t))).norm();
-		}
+            n = (last.add(d.mul(t))).norm();
+        }
 
         return m;
     }
@@ -123,7 +123,7 @@ final class Worker implements Runnable  {
         return new vector(p, p, p).add(S(h, r).mul(.5f)); // Attenuate color by 50% since it is bouncing (*.5)
     }
 
-	@Override
+    @Override
     public void run() {
         for (int y = offset; y < Raycaster.h; y += jump) { // For each row
             int k = (Raycaster.h - y - 1) * Raycaster.w * 3;
@@ -137,7 +137,7 @@ final class Worker implements Runnable  {
                 Raycaster.bytes[k++] = (byte) p.z;
             }
         }
-	}
+    }
 
     private vector innerLoop(final int y, final int x, vector p) {
         // Cast 64 rays per pixel (For blur (stochastic sampling)
@@ -151,7 +151,7 @@ final class Worker implements Runnable  {
             // Accumulate the color returned in the p variable
             p = S(S_CONST_VEC.add(t), // Ray Origin
                     t.mul(-1).add((Raycaster.a.mul(ThreadLocalRandom.current().nextFloat() + x).add(Raycaster.b.mul(y + ThreadLocalRandom.current().nextFloat())).add(Raycaster.c)).mul(16.f)).norm() // Ray Direction with random deltas
-            		).mul(3.5f).add(p); // +p for color accumulation
+                    ).mul(3.5f).add(p); // +p for color accumulation
         }
         return p;
     }
