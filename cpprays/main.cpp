@@ -25,9 +25,6 @@ struct vector {
   vector(const vector &r) //Copy Constructor
 	  : x(r.x),y(r.y), z(r.z) {}
 
-  vector& operator=(const vector&r)
-  { x = r.x; y = r.y; z = r.z;  return *this; }
-
   vector operator=(vector &&r)
   { x = std::move(r.x);  y = std::move(r.y);  z = std::move(r.z); return *this;  }
 
@@ -120,11 +117,11 @@ int T(vector o, const vector &d,float& t,vector& n) {
 // a ray passing by point o (Origin) and d (Direction)
 vector S(const vector &o,const vector &d, unsigned int& seed) {
   float t;
-  vector n, on;
+  vector n;
 
   //Search for an intersection ray Vs World.
   int m=T(o,d,t,n);
-  on = n;
+  vector on(n);
 
   if(!m) { // m==0
     //No sphere found and the ray goes upward: Generate a sky color
