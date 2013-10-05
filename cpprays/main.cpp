@@ -5,6 +5,7 @@
 #include <random>
 #include <thread>
 #include <vector>
+#include <string>
 
 //Define a vector class with constructor and operator: 'v'
 struct vector {
