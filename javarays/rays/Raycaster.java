@@ -8,17 +8,17 @@ public final class Raycaster {
 
     final static class vector {
 		public final float x,y,z;  // Vector has three float attributes.
-		public vector(){ x=y=z=0.f;}                                  //Empty constructor
-		public vector(final vector v){x=v.x;y=v.y;z=v.z;}                                  //Empty constructor
-		public vector(final float a,final float b,final float c){x=a;y=b;z=c;}            //Constructor
-		public vector add(final vector r) {return new vector(x+r.x,y+r.y,z+r.z);} //Vector add
+		public vector() {x=y=z=0.f;}                                                //Empty constructor
+		public vector(final vector v) {x=v.x;y=v.y;z=v.z;}                          //Empty constructor
+		public vector(final float a,final float b,final float c) {x=a;y=b;z=c;}     //Constructor
+		public vector add(final vector r) {return new vector(x+r.x,y+r.y,z+r.z);}   //Vector add
+		public float  dot(final vector r) {return x*r.x+y*r.y+z*r.z;}               //Vector dot product
+		public vector mul(final float r)  {return new vector(x*r,y*r,z*r);}         //Vector scaling
+		public vector norm() {return mul((float)(1.f/Math.sqrt(dot(this))));}       // Used later for normalizing the vector
 		public vector pow(final vector r) {return new vector(y*r.z-z*r.y,z*r.x-x*r.z,x*r.y-y*r.x);} //Cross-product
-		public float  dot(final vector r)  {return x*r.x+y*r.y+z*r.z;}    //Vector dot product
-		public vector mul(final float r)  {return new vector(x*r,y*r,z*r);}       //Vector scaling
-		public vector norm(){return mul((float)(1.f/Math.sqrt(dot(this))));} // Used later for normalizing the vector
 	};
 
-	final static char[][] art = {
+	private final static char[][] art = {
 		"                   ".toCharArray(),
 		"    1111           ".toCharArray(),
 		"   1    1          ".toCharArray(),
@@ -30,9 +30,7 @@ public final class Raycaster {
 		"    11111     11   ".toCharArray()
 	};
 
-	static vector[] objects;
-
-	static void F() {
+	static private vector[] F() {
 		final Vector<vector> tmp = new Vector<>(art.length * art[0].length);
 
 		final int nr = art.length;
@@ -45,7 +43,7 @@ public final class Raycaster {
 			}
 		}
 
-		objects = tmp.toArray(new vector[0]);
+		return tmp.toArray(new vector[0]);
 	}
 
     private static final vector STD_VEC = new vector(0, 0, 1);
@@ -61,8 +59,7 @@ public final class Raycaster {
 	static final vector c = (a.add(b)).mul(-256).add(g);
 
 	public static void main(final String[] args) throws Exception {
-		F();
-
+		final vector[] objects = F();
 		int num_threads = Runtime.getRuntime().availableProcessors();
 
 		if(args.length > 0) {
@@ -84,7 +81,7 @@ public final class Raycaster {
 
 		final Vector<Thread> threads = new Vector<>();
         for (int i = 0; i < num_threads; ++i) {
-            final Thread thread = new Thread(new Worker(i, num_threads));
+            final Thread thread = new Thread(new Worker(objects, i, num_threads));
             thread.start();
             threads.add(thread);
         }

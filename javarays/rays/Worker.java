@@ -22,13 +22,16 @@ final class Worker implements Runnable  {
 	private final int offset;
 	private final int jump;
 
+	private final vector[] objects;
+
 	private float t;
 	private vector n;
 
-	public Worker(final int _offset, final int _jump) {
-		seed = new Random();
+	public Worker(final vector[] _objects, final int _offset, final int _jump) {
+		objects = _objects;
 		offset = _offset;
 		jump = _jump;
+		seed = new Random();
 	}
 
 
@@ -49,9 +52,10 @@ final class Worker implements Runnable  {
         }
 
         o = o.add(T_CONST_VEC);
-        for(int i = 0; i < Raycaster.objects.length; i++) {
+        vector last = null;
+        for(int i = 0; i < objects.length; i++) {
             // There is a sphere but does the ray hits it ?
-            final vector p1 = o.add(Raycaster.objects[i]);
+            final vector p1 = o.add(objects[i]);
             final float b = p1.dot(d), c = p1.dot(p1) - 1, b2 = b * b;
 
             // Does the ray hit the sphere ?
@@ -60,10 +64,16 @@ final class Worker implements Runnable  {
                 final float q = b2 - c, s = (float) (-b - Math.sqrt(q));
 
                 if (s < t && s > .01f) {
-                    t = s; n = (p1.add(d.mul(t))).norm(); m = 2;
+                	last = p1;
+                    t = s;
+                    m = 2;
                 }
             }
         }
+
+        if(last != null) {
+			n = (last.add(d.mul(t))).norm();
+		}
 
         return m;
     }
