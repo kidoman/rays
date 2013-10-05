@@ -1,6 +1,6 @@
 package rays;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import rays.Raycaster.vector;
 
@@ -18,7 +18,6 @@ final class Worker implements Runnable  {
     private final vector PATTERN2    = new vector( 3,  3,  3);
 
     // for stochastic sampling
-    private final Random seed;
 	private final int offset;
 	private final int jump;
 
@@ -31,7 +30,6 @@ final class Worker implements Runnable  {
 		objects = _objects;
 		offset = _offset;
 		jump = _jump;
-		seed = new Random();
 	}
 
     //The intersection test for line [o,v].
@@ -94,7 +92,7 @@ final class Worker implements Runnable  {
 
         // A sphere was maybe hit.
         vector h = o.add(d.mul(t)); // h = intersection coordinate
-        final vector l = (new vector(9 + seed.nextFloat(), 9 + seed.nextFloat(), 16).add(h.mul(-1.f))).norm(); // 'l' = direction to light (with random delta for soft-shadows).
+        final vector l = (new vector(9 + ThreadLocalRandom.current().nextFloat(), 9 + ThreadLocalRandom.current().nextFloat(), 16).add(h.mul(-1.f))).norm(); // 'l' = direction to light (with random delta for soft-shadows).
 
         // Calculated the lambertian factor
         float b = l.dot(n);
@@ -147,12 +145,12 @@ final class Worker implements Runnable  {
         for (int r = 64; r-- > 0;) {
             // The delta to apply to the origin of the view (For
             // Depth of View blur).
-            final vector t = Raycaster.a.mul(seed.nextFloat()-.5f).mul(99.f).add(Raycaster.b.mul(seed.nextFloat()-.5f).mul(99.f)); // A little bit of delta up/down and left/right
+            final vector t = Raycaster.a.mul(ThreadLocalRandom.current().nextFloat()-.5f).mul(99.f).add(Raycaster.b.mul(ThreadLocalRandom.current().nextFloat()-.5f).mul(99.f)); // A little bit of delta up/down and left/right
 
             // Set the camera focal point vector(17,16,8) and Cast the ray
             // Accumulate the color returned in the p variable
             p = S(S_CONST_VEC.add(t), // Ray Origin
-                    t.mul(-1).add((Raycaster.a.mul(seed.nextFloat() + x).add(Raycaster.b.mul(y + seed.nextFloat())).add(Raycaster.c)).mul(16.f)).norm() // Ray Direction with random deltas
+                    t.mul(-1).add((Raycaster.a.mul(ThreadLocalRandom.current().nextFloat() + x).add(Raycaster.b.mul(y + ThreadLocalRandom.current().nextFloat())).add(Raycaster.c)).mul(16.f)).norm() // Ray Direction with random deltas
             		).mul(3.5f).add(p); // +p for color accumulation
         }
         return p;
