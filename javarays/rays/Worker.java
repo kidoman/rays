@@ -2,7 +2,6 @@ package rays;
 
 import java.util.Random;
 
-import rays.Raycaster.object;
 import rays.Raycaster.vector;
 
 final class Worker implements Runnable  {
@@ -50,9 +49,9 @@ final class Worker implements Runnable  {
         }
 
         o = o.add(T_CONST_VEC);
-        for (final object obj : Raycaster.objects) {
+        for (final vector obj : Raycaster.objects) {
             // There is a sphere but does the ray hits it ?
-            final vector p1 = o.add(new vector(obj.k, 0, obj.j));
+            final vector p1 = o.add(obj);
             final float b = p1.dot(d), c = p1.dot(p1) - 1, b2 = b * b;
 
             // Does the ray hit the sphere ?

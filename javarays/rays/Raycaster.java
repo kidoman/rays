@@ -18,11 +18,6 @@ public final class Raycaster {
 		public vector norm(){return mul((float)(1.f/Math.sqrt(dot(this))));} // Used later for normalizing the vector
 	};
 
-	final static class object {
-		public float k,j;
-		object(final float x, final float y){k=x;j=y;}
-	};
-
 	final static char[][] art = {
 		"                   ".toCharArray(),
 		"    1111           ".toCharArray(),
@@ -35,7 +30,7 @@ public final class Raycaster {
 		"    11111     11   ".toCharArray()
 	};
 
-	static Vector<object> objects = new Vector<>(art.length * art[0].length);
+	static Vector<vector> objects = new Vector<>(art.length * art[0].length);
 
 	static void F() {
 		final int nr = art.length;
@@ -43,7 +38,7 @@ public final class Raycaster {
 		for (int k = nc - 1; k >= 0; k--) {
 			for (int j = nr - 1; j >= 0; j--) {
 				if (art[j][nc - 1 - k] != ' ') {
-					objects.add(new object(-k, -(nr - 1 - j)));
+					objects.add(new vector(-k, 0, -(nr - 1 - j)));
 				}
 			}
 		}
