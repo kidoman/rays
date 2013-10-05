@@ -18,35 +18,31 @@ struct vector {
   vector operator!(){return *this*(1/sqrtf(*this%*this));} // Used later for normalizing the vector
 };
 
-const char *art[] = {
-  "                   ",
-  "    1111           ",
-  "   1    1          ",
-  "  1           11   ",
-  "  1          1  1  ",
-  "  1     11  1    1 ",
-  "  1      1  1    1 ",
-  "   1     1   1  1  ",
-  "    11111     11   "
-};
-
 struct object {
   float k,j;
   object(float x,float y){k=x;j=y;}
 };
 
-std::vector<object> objects;
+using Objects = std::vector<object>;
 
-void F() {
-  int nr = sizeof(art) / sizeof(char *),
-  nc = strlen(art[0]);
-  for (int k = nc - 1; k >= 0; k--) {
-    for (int j = nr - 1; j >= 0; j--) {
-      if(art[j][nc - 1 - k] != ' ') {
-        objects.push_back(object(-k, -(nr - 1 - j)));
+Objects objects;
+
+using Art = std::vector<std::string>;
+
+Objects makeObjects(const Art& art) {
+  Objects o;
+  auto y = 1.0f - static_cast<float>(art.size());
+  for(const auto& line : art) {
+    auto x = 1.0f - static_cast<float>(line.size());
+    for(const auto& c : line) {
+      if(' ' != c) {
+        o.emplace_back(x, y);
       }
+      x += 1.0f;
     }
+    y += 1.0f;
   }
+  return o;
 }
 
 float R(unsigned int& seed) {
@@ -144,7 +140,19 @@ vector S(vector o,vector d, unsigned int& seed) {
 // The main function. It generates a PPM image to stdout.
 // Usage of the program is hence: ./card > erk.ppm
 int main(int argc, char **argv) {
-  F();
+  const Art art {
+    "                   ",
+    "    1111           ",
+    "   1    1          ",
+    "  1           11   ",
+    "  1          1  1  ",
+    "  1     11  1    1 ",
+    "  1      1  1    1 ",
+    "   1     1   1  1  ",
+    "    11111     11   "
+  };
+
+  objects = makeObjects(art);
 
   int w = 512, h = 512;
   int num_threads = std::thread::hardware_concurrency();
