@@ -73,7 +73,9 @@ Current Performance
 
 The current performance stacks up like so:
 
-![Performance benchmarks](https://kidoman.com/images/go-vs-cpp-after-both-optimized.png)
+![512x512 image](https://kidoman.com/images/512x512-3.png)
+![2048x2048 image](https://kidoman.com/images/2048x2048-3.png)
+![4096x4096 image](https://kidoman.com/images/4096x4096-3.png)
 
 Contributors
 ===
