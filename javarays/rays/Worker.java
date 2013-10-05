@@ -10,6 +10,7 @@ final class Worker implements Runnable  {
 	// Default pixel color is almost pitch black
 	private final vector DEF_COLOR   = new vector(13, 13, 13);
 
+	private final vector EMPTY_VEC   = new vector();
     private final vector SKY_VEC     = new vector(.7f, .6f, 1);
     private final vector STD_VEC     = new vector( 0,  0,  1);
     private final vector S_CONST_VEC = new vector(17, 16,  8);
@@ -42,10 +43,11 @@ final class Worker implements Runnable  {
         int m = 0;
         final float p = -o.z / d.z;
 
+        res.n = EMPTY_VEC;
         if (.01f < p) {
-            res.t = p; res.n = STD_VEC; m = 1;
-        } else {
-            res.n = new vector();
+			res.t = p;
+			res.n = STD_VEC;
+			m = 1;
         }
 
         o = o.add(T_CONST_VEC);
