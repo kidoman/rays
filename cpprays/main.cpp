@@ -1,3 +1,4 @@
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -9,13 +10,41 @@
 //Define a vector class with constructor and operator: 'v'
 struct vector {
   float x,y,z;  // Vector has three float attributes.
-  vector operator+(vector r){return vector(x+r.x,y+r.y,z+r.z);} //Vector add
-  vector operator*(float r){return vector(x*r,y*r,z*r);}       //Vector scaling
-  float operator%(vector r){return x*r.x+y*r.y+z*r.z;}    //Vector dot product
-  vector(){}                                  //Empty constructor
-  vector operator^(vector r){return vector(y*r.z-z*r.y,z*r.x-x*r.z,x*r.y-y*r.x);} //Cross-product
-  vector(float a,float b,float c){x=a;y=b;z=c;}            //Constructor
-  vector operator!(){return *this*(1/sqrtf(*this%*this));} // Used later for normalizing the vector
+
+  vector() {} //Empty constructor
+
+  vector(float &&a,float &&b,float &&c) //Constructor
+	  : x(std::move(a)), y(std::move(b)), z(std::move(c))  {}
+
+  vector(const float &a, const float &b, const float &c) //pass by reference Constructor
+	  : x(a), y(b), z(c) {}
+
+  vector(vector &&r) //Move Constructor
+	  : x(std::move(r.x)),y(std::move(r.y)), z(std::move(r.z)) {}
+
+  vector(const vector &r) //Copy Constructor
+	  : x(r.x),y(r.y), z(r.z) {}
+
+  vector& operator=(const vector&r)
+  { x = r.x; y = r.y; z = r.z;  return *this; }
+
+  vector operator=(vector &&r)
+  { x = std::move(r.x);  y = std::move(r.y);  z = std::move(r.z); return *this;  }
+
+  vector operator+(const vector &r) const  //Vector add
+  { return vector(x+r.x,y+r.y,z+r.z); }
+
+  vector operator*(const float &r) const        //Vector scaling
+  { return vector(x*r,y*r,z*r); }
+
+  float dot(const vector &r) const    //Vector dot product
+  { return x*r.x+y*r.y+z*r.z; }
+
+  vector operator^(const vector &r) const
+  { return vector(y*r.z-z*r.y,z*r.x-x*r.z,x*r.y-y*r.x); } //Cross-product
+
+  vector operator!()
+  { return this->operator*(1/sqrtf( dot(*this)));} // Used later for normalizing the vector
 };
 
 const char *art[] = {
@@ -32,10 +61,10 @@ const char *art[] = {
 
 struct object {
   float k,j;
-  object(float x,float y){k=x;j=y;}
+  object(const float &x,const float &y){k=x;j=y;}
 };
 
-std::vector<object> objects;
+static std::vector<object> objects;
 
 void F() {
   int nr = sizeof(art) / sizeof(char *),
@@ -43,7 +72,7 @@ void F() {
   for (int k = nc - 1; k >= 0; k--) {
     for (int j = nr - 1; j >= 0; j--) {
       if(art[j][nc - 1 - k] != ' ') {
-        objects.push_back(object(-k, -(nr - 1 - j)));
+        objects.emplace_back(-k, -(nr - 1 - j));
       }
     }
   }
@@ -61,7 +90,7 @@ float R(unsigned int& seed) {
 // Return 2 if a hit was found (and also return distance t and bouncing ray n).
 // Return 0 if no hit was found but ray goes upward
 // Return 1 if no hit was found but ray goes downward
-int T(vector o,vector d,float& t,vector& n) {
+int T(vector o, const vector &d,float& t,vector& n) {
   t=1e9;
   int m=0;
   float p=-o.z/d.z;
@@ -73,7 +102,9 @@ int T(vector o,vector d,float& t,vector& n) {
   for (auto obj : objects) {
     // There is a sphere but does the ray hits it ?
     vector p=o+vector(obj.k,0,obj.j);
-    float b=p%d,c=p%p-1,b2=b*b;
+    float b=p.dot(d),
+		  c=p.dot(p)-1,
+		  b2=b*b;
 
     // Does the ray hit the sphere ?
     if(b2>c) {
@@ -92,7 +123,7 @@ int T(vector o,vector d,float& t,vector& n) {
 
 // (S)ample the world and return the pixel color for
 // a ray passing by point o (Origin) and d (Direction)
-vector S(vector o,vector d, unsigned int& seed) {
+vector S(const vector &o,const vector &d, unsigned int& seed) {
   float t;
   vector n, on;
 
@@ -114,7 +145,7 @@ vector S(vector o,vector d, unsigned int& seed) {
   l=!(vector(9+R(seed),9+R(seed),16)+h*-1);  // 'l' = direction to light (with random delta for soft-shadows).
 
   //Calculated the lambertian factor
-  float b=l%n;
+  float b=l.dot(n);
 
   //Calculate illumination factor (lambertian coefficient > 0 or in shadow)?
   if(b<0||T(h,l,t,n))
@@ -125,10 +156,10 @@ vector S(vector o,vector d, unsigned int& seed) {
     return((int)(ceil(h.x)+ceil(h.y))&1?vector(3,1,1):vector(3,3,3))*(b*.2f+.1f);
   }
 
-  vector r=d+on*(on%d*-2);               // r = The half-vector
+  vector r=d+on*(on.dot(d)*-2);               // r = The half-vector
 
   // Calculate the color 'p' with diffuse and specular component
-  float p=l%r*(b>0);
+  float p=l.dot(r)*(b>0);
   float p33 = p*p;
   p33 = p33*p33;
   p33 = p33*p33;
@@ -171,7 +202,7 @@ int main(int argc, char **argv) {
     c=(a+b)*-256+g;       // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
 
   int s = 3*w*h;
-  char *bytes = new char[s];
+  std::vector<char> bytes(s);
 
   auto lambda=[&](unsigned int seed, int offset, int jump) {
     for (int y=offset; y<h; y+=jump) {    //For each row
@@ -210,6 +241,5 @@ int main(int argc, char **argv) {
     t.join();
   }
 
-  fwrite(bytes, 1, s, stdout);
-  delete [] bytes;
+  fwrite(&bytes[0], 1, s, stdout);
 }
