@@ -7,8 +7,10 @@ import rays.Raycaster.vector;
 
 final class Worker implements Runnable  {
 
-    // Default pixel color is almost pitch black
-    private static final vector DEF_COLOR = new vector(13, 13, 13);
+	// Default pixel color is almost pitch black
+	private final vector DEF_COLOR   = new vector(13, 13, 13);
+
+    private final vector SKY_VEC     = new vector(.7f, .6f, 1);
     private final vector STD_VEC     = new vector( 0,  0,  1);
     private final vector S_CONST_VEC = new vector(17, 16,  8);
     private final vector T_CONST_VEC = new vector( 0,  3, -4);
@@ -80,7 +82,7 @@ final class Worker implements Runnable  {
             float p = 1 - d.z;
             p = p * p;
             p = p * p;
-            return new vector(.7f, .6f, 1).mul(p);
+            return SKY_VEC.mul(p);
         }
 
         // A sphere was maybe hit.
