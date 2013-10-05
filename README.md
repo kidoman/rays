@@ -24,7 +24,7 @@ Prerequisite
 Go version
 ---
 
-* go get -u github.com/kid0m4n/gorays
+* go get -u github.com/kid0m4n/gorays/go
 * time gorays > gorays.ppm
 * open gorays.ppm
 
