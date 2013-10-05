@@ -14,6 +14,8 @@ I have written two blog posts describing the intent behind this:
 * List of all Go optimizations applied: https://kidoman.com/programming/go-getter.html
 * Second run with C++ optimized: https://kidoman.com/programming/go-getter-part-2.html
 
+[Reddit discussion thread](http://www.reddit.com/r/golang/comments/1nlgbq/business_card_ray_tracer_go_faster_than_c/)
+
 Why Ray tracing?
 ===
 
