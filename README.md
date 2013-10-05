@@ -37,10 +37,14 @@ Please feel free to implement the benchmark (refer to the original C++ version [
 
 Also, optimizations to the existing implementation are obviously welcome. I will regularly update the results based on activity/updates to the code.
 
-Why optimize? Shouldn't we leave it to the compilers to do their best
+Why optimize the base algorithm?
 ---
 
-Optimizing in a particular language also gives you a feel of "how far" you can go when the need arises. Micro optimizations are the root of all evil, no doubt; but not when the subject matter is benchmarking (plus, it doesn't hurt that it makes the process fun)
+Also, *shouldn't we leave it to the compilers to do their best*
+
+Optimizing in a particular language also gives you a feel of "how far" you can push the boundaries of performance when the need arises. Micro optimizations are the root of all evil, no doubt; but not when the subject matter is benchmarking itself (plus, it doesn't hurt that it makes the process fun)
+
+Think of this as a great opportunity to learn the various nuances of these languages, which are otherwise extremely hard to learn/master.
 
 How to use
 ===
