@@ -16,7 +16,7 @@ I have written two blog posts describing the intent behind this:
 
 [Reddit discussion thread](http://www.reddit.com/r/golang/comments/1nlgbq/business_card_ray_tracer_go_faster_than_c/)
 
-Why Ray tracing?
+Why ray tracing?
 ===
 
 * I picked the "Business card raytracer" as it was written in C++ (so a high value fast target) and extremely concise (so I wouldn't be bored to death porting it to Go)
