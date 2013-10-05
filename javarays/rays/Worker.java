@@ -23,30 +23,29 @@ final class Worker implements Runnable  {
 	private final int offset;
 	private final int jump;
 
+	private float t;
+	private vector n;
+
 	public Worker(final int _offset, final int _jump) {
 		seed = new Random();
 		offset = _offset;
 		jump = _jump;
 	}
 
-    private final static class TRes {
-        float t;
-        vector n;
-    }
 
     //The intersection test for line [o,v].
     // Return 2 if a hit was found (and also return distance t and bouncing ray n).
     // Return 0 if no hit was found but ray goes upward
     // Return 1 if no hit was found but ray goes downward
-    private int T(vector o, final vector d, final Worker.TRes res) {
-        res.t = 1e9f;
+    private int T(vector o, final vector d) {
+        t = 1e9f;
         int m = 0;
         final float p = -o.z / d.z;
 
-        res.n = EMPTY_VEC;
+        n = EMPTY_VEC;
         if (.01f < p) {
-			res.t = p;
-			res.n = STD_VEC;
+			t = p;
+			n = STD_VEC;
 			m = 1;
         }
 
@@ -61,8 +60,8 @@ final class Worker implements Runnable  {
                 // It does, compute the distance camera-sphere
                 final float q = b2 - c, s = (float) (-b - Math.sqrt(q));
 
-                if (s < res.t && s > .01f) {
-                    res.t = s; res.n = (p1.add(d.mul(res.t))).norm(); m = 2;
+                if (s < t && s > .01f) {
+                    t = s; n = (p1.add(d.mul(t))).norm(); m = 2;
                 }
             }
         }
@@ -73,11 +72,9 @@ final class Worker implements Runnable  {
     // (S)ample the world and return the pixel color for
     // a ray passing by point o (Origin) and d (Direction)
     private vector S(final vector o, final vector d) {
-        final Worker.TRes res = new TRes();
-
         // Search for an intersection ray Vs World.
-        final int m = T(o, d, res);
-        final vector on = new vector(res.n);
+        final int m = T(o, d);
+        final vector on = new vector(n);
 
         if (m == 0) { // m==0
             // No sphere found and the ray goes upward: Generate a sky color
@@ -88,14 +85,14 @@ final class Worker implements Runnable  {
         }
 
         // A sphere was maybe hit.
-        vector h = o.add(d.mul(res.t)); // h = intersection coordinate
+        vector h = o.add(d.mul(t)); // h = intersection coordinate
         final vector l = (new vector(9 + seed.nextFloat(), 9 + seed.nextFloat(), 16).add(h.mul(-1.f))).norm(); // 'l' = direction to light (with random delta for soft-shadows).
 
         // Calculated the lambertian factor
-        float b = l.dot(res.n);
+        float b = l.dot(n);
 
         // Calculate illumination factor (lambertian coefficient > 0 or in shadow)?
-        if (b < 0 || T(h, l, res) != 0) {
+        if (b < 0 || T(h, l) != 0) {
             b = 0;
         }
 
