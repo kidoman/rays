@@ -105,7 +105,7 @@ Objects makeObjects(const Art& art) {
   return o;
 }
 
-float R(unsigned int& seed) {
+float rnd(unsigned int& seed) {
   seed += seed;
   seed ^= 1;
   if ((int)seed < 0)
@@ -167,7 +167,7 @@ vector S(const Objects& objects, vector o,vector d, unsigned int& seed) {
   }
 
   vector h=o+d*t,
-    l=!(vector(9+R(seed),9+R(seed),16)+h*-1);
+    l=!(vector(9+rnd(seed),9+rnd(seed),16)+h*-1);
 
   float b=l%n;
 
@@ -256,10 +256,10 @@ int main(int argc, char **argv) {
         vector p(13,13,13);
 
         for(int r=64;r--;) {
-          const vector t=a*(R(seed)-.5f)*99+b*(R(seed)-.5f)*99;
+          const vector t=a*(rnd(seed)-.5f)*99+b*(rnd(seed)-.5f)*99;
 
           p=S(objects, vector(17,16,8)+t,
-            !(t*-1+(a*(R(seed)+x)+b*(y+R(seed))+c)*16),
+            !(t*-1+(a*(rnd(seed)+x)+b*(y+rnd(seed))+c)*16),
             seed)*3.5f+p;
         }
 
