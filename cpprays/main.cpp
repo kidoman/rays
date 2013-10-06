@@ -83,12 +83,7 @@ private:
 
 #endif
 
-struct object {
-  float k,j;
-  object(float x,float y){k=x;j=y;}
-};
-
-using Objects = std::vector<object>;
+using Objects = std::vector<vector>;
 
 Objects objects;
 
@@ -101,7 +96,7 @@ Objects makeObjects(const Art& art) {
     auto x = 1.0f - static_cast<float>(line.size());
     for(const auto& c : line) {
       if(' ' != c) {
-        o.emplace_back(x, y);
+        o.emplace_back(x, 3, y - 4);
       }
       x += 1.0f;
     }
@@ -126,10 +121,11 @@ int T(vector o,vector d,float& t,vector& n) {
   if(.01f<p)
     t=p,n=vector(0,0,1),m=1;
 
-  o=o+vector(0,3,-4);
   for (const auto& obj : objects) {
-    const vector p=o+vector(obj.k,0,obj.j);
-    const float b=p%d,c=p%p-1,b2=b*b;
+    const vector p = o + obj;
+    const float b = p % d,
+      c = p%p-1,
+      b2 = b * b;
 
     if(b2>c) {
       const float q=b2-c, s=-b-sqrtf(q);
