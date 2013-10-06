@@ -1,3 +1,5 @@
+module Rays
+
 immutable Vec{T<:Real}
     x :: T
     y :: T
@@ -89,6 +91,16 @@ const FLOOR_PATTERN2  = Vec{Float64}(3.0, 3.0, 3.0)
 # return NOHIT_UP if no hit was found but ray goes upward
 # return NOHIT_DOWN if no hit was found but ray goes downward
 
+macro inline_dot(expr::Expr)
+    if expr.head == :call && expr.args[1] == :dot
+	quote
+            local va = $(expr.args[2])
+            local vb = $(expr.args[3])
+            (va.x * vb.x) + (va.y * vb.y) + (va.z * vb.z)
+        end 
+    end
+end
+     
 function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     dist = 1e9
     st = NOHIT_UP
@@ -104,7 +116,7 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     for obj = objects
         p1 = orig + obj
         b  = dot(p1, dir)
-        c  = dot(p1, p1) - 1.0
+        c  = dot(p1, p1) - 1
         b2 = b * b
         # does the ray hit the sphere ? 
         if b2 > c
@@ -234,10 +246,12 @@ function main(width::Int64, height::Int64)
     write(STDOUT, bytes)
 end
 
+end
+
 nargs = length(ARGS)
-if nargs == 0     main(512, 512)
-elseif nargs == 1 main(int(ARGS[1]), int(ARGS[1]))
-elseif nargs == 2 main(int(ARGS[1]), int(ARGS[2]))
-elseif nargs == 3 main(int(ARGS[1]), int(ARGS[2]))
+if nargs == 0     Rays.main(512, 512)
+elseif nargs == 1 Rays.main(int(ARGS[1]), int(ARGS[1]))
+elseif nargs == 2 Rays.main(int(ARGS[1]), int(ARGS[2]))
+elseif nargs == 3 Rays.main(int(ARGS[1]), int(ARGS[2]))
 else println("Error: too many arguments")
 end
