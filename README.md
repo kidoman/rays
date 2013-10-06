@@ -55,8 +55,8 @@ Benchmark Run
 
 The benchmark is to render a 768x768 image with the text:
 
-R A
-Y S
+**R A**<br/>
+**Y S**
 
 A program is valid if it outputs a valid PPM image to STDOUT.
 
