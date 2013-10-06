@@ -150,11 +150,9 @@ vector S(vector o,vector d, unsigned int& seed) {
   const int m=T(o,d,t,n);
   const vector on = n;
 
-  if(!m) { // m==0
-    float p = 1-d.z();
-    p = p*p;
-    p = p*p;
-    return vector(.7f,.6f,1)*p;
+  if(!m) {
+    float p = 1 - d.z();
+    return vector(1.f, 1.f, 1.f) * p;
   }
 
   vector h=o+d*t,
@@ -186,15 +184,25 @@ vector S(vector o,vector d, unsigned int& seed) {
 
 int main(int argc, char **argv) {
   const Art art {
-    "                   ",
-    "    1111           ",
-    "   1    1          ",
-    "  1           11   ",
-    "  1          1  1  ",
-    "  1     11  1    1 ",
-    "  1      1  1    1 ",
-    "   1     1   1  1  ",
-    "    11111     11   "
+    " 1111            1     ",
+    " 1   11         1 1    ",
+    " 1     1       1   1   ",
+    " 1     1      1     1  ",
+    " 1    11     1       1 ",
+    " 11111       111111111 ",
+    " 1    1      1       1 ",
+    " 1     1     1       1 ",
+    " 1      1    1       1 ",
+    "                       ",
+    "1         1    11111   ",
+    " 1       1    1        ",
+    "  1     1    1         ",
+    "   1   1     1         ",
+    "    1 1       111111   ",
+    "     1              1  ",
+    "     1              1  ",
+    "     1             1   ",
+    "     1        111111   "
   };
 
   objects = makeObjects(art);
@@ -206,8 +214,8 @@ int main(int argc, char **argv) {
     return defaultValue;
   };
 
-  const auto w = getIntArg(1, 512);
-  const auto h = getIntArg(2, 512);
+  const auto w = getIntArg(1, 768);
+  const auto h = getIntArg(2, 768);
   const auto num_threads = [&]() {
     int x = getIntArg(3, 0);
     if(x <= 0) {
@@ -222,7 +230,7 @@ int main(int argc, char **argv) {
 
   printf("P6 %d %d 255 ", w, h); // The PPM Header is issued
 
-  const vector g=!vector(-5.5f,-16,0),
+  const vector g=!vector(-6.75f, -16.f, 1.f),
     a=!(vector(0,0,1)^g) * .002f,
     b=!(g^a)*.002f,
     c=(a+b)*-256+g;
