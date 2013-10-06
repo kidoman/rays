@@ -31,7 +31,7 @@ Different Implementations
 Currently, the following versions are currently available, and tracked in their own folders:
 
 * Go (optimized, multi-threaded)
-* C++ (optimized, multi-threaded)
+* C++ (optimized, multi-threaded, SSE)
 * Java (optimized, multi-threaded)
 
 Please feel free to implement the benchmark (refer to the original C++ version [here](https://gist.github.com/kid0m4n/6680629)) in the language of your choice. All optimizations are welcome but try not to stray away too far from the spirit of the original algorithm. The existing implementations can always act as a litmus test.
