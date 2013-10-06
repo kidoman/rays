@@ -14,25 +14,25 @@ import (
 )
 
 var art = []string{
-	" 11111           1     ",
-	" 1    1         1 1    ",
-	" 1     1       1   1   ",
-	" 1     1      1     1  ",
-	" 1    11     1       1 ",
-	" 11111       111111111 ",
-	" 1    1      1       1 ",
-	" 1     1     1       1 ",
-	" 1      1    1       1 ",
-	"                       ",
-	"1         1    11111   ",
-	" 1       1    1        ",
-	"  1     1    1         ",
-	"   1   1     1         ",
-	"    1 1       111111   ",
-	"     1              1  ",
-	"     1              1  ",
-	"     1             1   ",
-	"     1        111111   ",
+	" 11111           1    ",
+	" 1    1         1 1   ",
+	" 1     1       1   1  ",
+	" 1     1      1     1 ",
+	" 1    11     1       1",
+	" 11111       111111111",
+	" 1    1      1       1",
+	" 1     1     1       1",
+	" 1      1    1       1",
+	"                      ",
+	"1         1    11111  ",
+	" 1       1    1       ",
+	"  1     1    1        ",
+	"   1   1     1        ",
+	"    1 1       111111  ",
+	"     1              1 ",
+	"     1              1 ",
+	"     1             1  ",
+	"     1        111111  ",
 }
 
 var objects = makeObjects()
@@ -130,7 +130,7 @@ func (r row) render(a, b, c vector.Vector, ar float64, bytes []byte, seed *uint3
 
 		for i := 0; i < 64; i++ {
 			t := a.Scale(rnd(seed) - 0.5).Scale(99).Add(b.Scale(rnd(seed) - 0.5).Scale(99))
-			orig := vector.Vector{X: 17, Y: 16, Z: 8}.Add(t)
+			orig := vector.Vector{X: 16, Y: 16, Z: 8}.Add(t)
 			dir := t.Scale(-1).Add(a.Scale(rnd(seed) + float64(x)*ar).Add(b.Scale(rnd(seed) + float64(r)*ar)).Add(c).Scale(16)).Normalize()
 			p = sampler(orig, dir, seed).Scale(3.5).Add(p)
 		}
