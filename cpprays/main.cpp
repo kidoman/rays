@@ -119,7 +119,7 @@ enum class Status {
   kHit
 };
 
-Status tracer(vector o, vector d, float& t, vector& n) {
+Status tracer(const Objects& objects, vector o, vector d, float& t, vector& n) {
   t=1e9;
   auto m = Status::kMissUpward;
   const float p=-o.z()/d.z();
@@ -153,12 +153,12 @@ Status tracer(vector o, vector d, float& t, vector& n) {
   return m;
 }
 
-vector S(vector o,vector d, unsigned int& seed) {
+vector S(const Objects& objects, vector o,vector d, unsigned int& seed) {
   float t;
   vector n;
 
   //Search for an intersection ray Vs World.
-  const auto m = tracer(o, d, t, n);
+  const auto m = tracer(objects, o, d, t, n);
   const vector on = n;
 
   if(m == Status::kMissUpward) {
@@ -171,7 +171,7 @@ vector S(vector o,vector d, unsigned int& seed) {
 
   float b=l%n;
 
-  if(b < 0 || tracer(h, l, t, n) != Status::kMissUpward)
+  if(b < 0 || tracer(objects, h, l, t, n) != Status::kMissUpward)
     b=0;
 
   if(m == Status::kMissDownward) {
@@ -190,7 +190,7 @@ vector S(vector o,vector d, unsigned int& seed) {
   p33 = p33*p;
   p = p33*p33*p33;
 
-  return vector(p,p,p)+S(h,r,seed)*.5;
+  return vector(p,p,p)+S(objects, h,r,seed)*.5;
 }
 
 int main(int argc, char **argv) {
@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
     "     1        111111   "
   };
 
-  objects = makeObjects(art);
+  const auto objects = makeObjects(art);
 
   const auto getIntArg = [&](int argIndex, int defaultValue) {
     if(argc > argIndex) {
@@ -258,7 +258,7 @@ int main(int argc, char **argv) {
         for(int r=64;r--;) {
           const vector t=a*(R(seed)-.5f)*99+b*(R(seed)-.5f)*99;
 
-          p=S(vector(17,16,8)+t,
+          p=S(objects, vector(17,16,8)+t,
             !(t*-1+(a*(R(seed)+x)+b*(y+R(seed))+c)*16),
             seed)*3.5f+p;
         }
