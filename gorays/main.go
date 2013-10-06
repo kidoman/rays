@@ -10,7 +10,9 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"strconv"
 	"sync"
+	"time"
 )
 
 var art = []string{
@@ -63,16 +65,29 @@ func rnd(s *uint32) float64 {
 	return float64(*s%95) / float64(95)
 }
 
-var (
-	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
-	mp         = flag.Int("mp", 1000, "size of the rendered image in megapixels")
-	procs      = flag.Int("procs", runtime.NumCPU(), "numbers of parallel renders")
-)
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 
 var size int
 
+func getIntOpt(name string, i, def int) int {
+	if flag.NArg() > i {
+		v, err := strconv.Atoi(flag.Arg(i))
+		if err != nil {
+			log.Fatalf("%v has to be a simple interger", name)
+		}
+		return v
+	}
+	return def
+}
+
+func usage() {
+	fmt.Fprintf(os.Stderr, "usage: [-cpuprofile] [mega pixels] [times] [procs]\n")
+	flag.PrintDefaults()
+}
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU() + 1)
+	flag.Usage = usage
 	flag.Parse()
 
 	if *cpuprofile != "" {
@@ -84,37 +99,63 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	if *procs < 1 {
-		log.Fatalf("Procs (%v) needs to be >= 1", *procs)
+	mp := getIntOpt("mp", 0, 1)
+	size = int(math.Sqrt(float64(mp * 1000000)))
+
+	times := getIntOpt("times", 1, 1)
+	log.Printf("Will render %v times", times)
+
+	procs := getIntOpt("procs", 2, runtime.NumCPU())
+	if procs < 1 {
+		log.Fatalf("procs (%v) needs to be >= 1", procs)
 	}
 
-	size = int(math.Sqrt(float64(*mp * 1000000)))
-
-	fmt.Printf("P6 %v %v 255 ", size, size)
+	var overallDuration time.Duration
 
 	bytes := make([]byte, 3*size*size)
 
-	g := vector.Vector{X: -3.1, Y: -16, Z: 3.2}.Normalize()
-	a := vector.Vector{X: 0, Y: 0, Z: 1}.CrossProduct(g).Normalize().Scale(0.002)
-	b := g.CrossProduct(a).Normalize().Scale(0.002)
-	c := a.Add(b).Scale(-256).Add(g)
-	ar := 512 / float64(size)
+	for t := 0; t < times; t++ {
+		log.Printf("Starting render#%v of size %v MP (%vx%v) with %v goroutines", t+1, mp, size, size, procs)
 
-	rows := make(chan row, size)
+		startTime := time.Now()
 
-	var wg sync.WaitGroup
-	wg.Add(*procs)
-	for i := 0; i < *procs; i++ {
-		go worker(a, b, c, ar, bytes, rows, &wg)
+		g := vector.Vector{X: -3.1, Y: -16, Z: 3.2}.Normalize()
+		a := vector.Vector{X: 0, Y: 0, Z: 1}.CrossProduct(g).Normalize().Scale(0.002)
+		b := g.CrossProduct(a).Normalize().Scale(0.002)
+		c := a.Add(b).Scale(-256).Add(g)
+		ar := 512 / float64(size)
+
+		rows := make(chan row, size)
+
+		var wg sync.WaitGroup
+		wg.Add(procs)
+		for i := 0; i < procs; i++ {
+			go worker(a, b, c, ar, bytes, rows, &wg)
+		}
+
+		for y := (size - 1); y >= 0; y-- {
+			rows <- row(y)
+		}
+		close(rows)
+		wg.Wait()
+
+		duration := time.Now().Sub(startTime)
+		overallDuration += duration
+
+		log.Print("Render complete")
+		log.Printf("Time taken for render %v", duration)
 	}
 
-	for y := (size - 1); y >= 0; y-- {
-		rows <- row(y)
-	}
-	close(rows)
-	wg.Wait()
+	log.Printf("Average time taken %v", time.Duration(int64(overallDuration)/int64(times)))
 
-	if _, err := os.Stdout.Write(bytes); err != nil {
+	f, err := os.Create("render.ppm")
+	if err != nil {
+		log.Panic(err)
+	}
+	defer f.Close()
+
+	fmt.Fprintf(f, "P6 %v %v 255 ", size, size)
+	if _, err := f.Write(bytes); err != nil {
 		log.Panic(err)
 	}
 }
