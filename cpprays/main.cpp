@@ -131,9 +131,12 @@ int T(vector o,vector d,float& t,vector& n) {
       const float q=b2-c, s=-b-sqrtf(q);
 
       if(s<t && s>.01f)
-        t=s, n=!(p+d*t), m=2;
+        t=s, n=p, m=2;
     }
   }
+
+  if (m == 2)
+    n=!(n+d*t);
 
   return m;
 }
