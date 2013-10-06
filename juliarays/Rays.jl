@@ -67,16 +67,6 @@ function make_objects()
     return objs
 end
 
-function pseudo_random(seed::Uint32)
-    seed += seed
-    seed ^= 1
-    if (int(seed) < 0)
-        seed ^= 0x88888eef
-    end
-    val = float(seed % 95) / float(95)
-    (val, seed)
-end
-
 const objects = make_objects()
 
 const SEED = uint32(10)
@@ -248,4 +238,4 @@ function main()
     write(STDOUT, bytes)
 end
 
-main()
+#main()
