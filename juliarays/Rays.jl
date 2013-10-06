@@ -6,6 +6,10 @@ immutable Vec{T<:Float64}
     function Vec(x::T, y::T, z::T)
         new(x, y, z)
     end 
+    
+    function Vec()
+        new(0.0, 0.0, 0.0)
+    end
 end
 
 # vector add
@@ -42,7 +46,7 @@ function make_objects()
     for k in (nc-1):-1:0
         for j in (nr-1):-1:0
             if art[j+1][nc-k] != ' '
-                push!(objs, Vec{Float64}(-float(k), 3.0, -float(nr - 1 - j) - 4.0))
+                push!(objs, Vec{Float64}(-float(k), 3.0, -(nr - 1.0 - j) - 4.0))
             end
         end
     end
@@ -65,7 +69,7 @@ const HIT        = 2
 const NOHIT_DOWN = 1
 const NOHIT_UP   = 0
 
-const STD_VEC   = Vec{Float64}(0.9, 0.0, 1.0)
+const STD_VEC   = Vec{Float64}(0.0, 0.0, 1.0)
 const SKY_VEC   = Vec{Float64}(0.7, 0.6, 1.0)
 const PATTERN1  = Vec{Float64}(3.0, 1.0, 1.0)
 const PATTERN2  = Vec{Float64}(3.0, 3.0, 3.0)
@@ -80,7 +84,7 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     st = NOHIT_UP
     p = -orig.z / dir.z
     
-    bounce = nothing
+    bounce = Vec{T}()
     
     if (0.01 < p)
         dist = p
@@ -239,9 +243,9 @@ function main()
             # possible bug? cannot assign array element from uint8, due to inexact error
             #@printf("%d, %d, %s\n", x, y, p) 
             #@printf("%f, %f, %f\n", p.x, p.y, p.z)
-            pix_r = p.x < 1.0 ? 0.0 : p.x > 255.0 ? 255.0 : p.x
-            pix_g = p.y < 1.0 ? 0.0 : p.y > 255.0 ? 255.0 : p.y
-            pix_b = p.z < 1.0 ? 0.0 : p.z > 255.0 ? 255.0 : p.z
+            pix_r = p.x #< 1.0 ? 0.0 : p.x > 255.0 ? 255.0 : p.x
+            pix_g = p.y #< 1.0 ? 0.0 : p.y > 255.0 ? 255.0 : p.y
+            pix_b = p.z #< 1.0 ? 0.0 : p.z > 255.0 ? 255.0 : p.z
            
             #@printf("%c%c%c", p.x, p.y, p.z)
             bytes[(y-1) * width * 3 + (x-1) * 3 + 1] = uint8(pix_r)
