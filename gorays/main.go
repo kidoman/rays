@@ -61,7 +61,8 @@ var (
 )
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU() + 1)
+	runtime.LockOSThread()
 	flag.Parse()
 
 	if *cpuprofile != "" {
@@ -129,6 +130,7 @@ func (r row) render(a, b, c vector.Vector, bytes []byte, seed *uint32) {
 }
 
 func worker(a, b, c vector.Vector, bytes []byte, rows <-chan row, wg *sync.WaitGroup) {
+	runtime.LockOSThread()
 	defer wg.Done()
 
 	seed := rand.Uint32()
