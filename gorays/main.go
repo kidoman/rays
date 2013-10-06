@@ -73,7 +73,6 @@ var size int
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU() + 1)
-	runtime.LockOSThread()
 	flag.Parse()
 
 	if *cpuprofile != "" {
