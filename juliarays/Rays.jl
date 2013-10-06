@@ -35,17 +35,6 @@ Base.cross{T<:Real}(a::Vec{T}, b::Vec{T}) = Vec{T}(a.y * b.z - a.z * b.y,
 # vector norm
 Base.norm{T<:Real}(a::Vec{T}) = a * (1.0 / sqrt(dot(a, a)))
 
-
-const go_art = ["                   ",
-                "    1111           ",
-                "   1    1          ",
-                "  1           11   ",
-                "  1          1  1  ",
-                "  1     11  1    1 ",
-                "  1      1  1    1 ",
-                "   1     1   1  1  ",
-                "    11111     11   "]
-
 #const julia_art = ["                     ",
 #                   "   11111    1        ",
 #                   "     1      1        ",
@@ -55,7 +44,28 @@ const go_art = ["                   ",
 #                   "  1  1 1  1 1 1 1  11",
 #                   "  1111 1111 1 1 111 1"]
 
-const art = go_art
+const rays_art = [
+" 1111            1     ",
+" 1   11         1 1    ",
+" 1     1       1   1   ",
+" 1     1      1     1  ",
+" 1    11     1       1 ",
+" 11111       111111111 ",
+" 1    1      1       1 ",
+" 1     1     1       1 ",
+" 1      1    1       1 ",
+"                       ",
+"1         1    11111   ",
+" 1       1    1        ",
+"  1     1    1         ",
+"   1   1     1         ",
+"    1 1       111111   ",
+"     1              1  ",
+"     1              1  ",
+"     1             1   ",
+"     1        111111   "]
+
+const art = rays_art
 
 function make_objects()
     nr = length(art)
@@ -81,7 +91,7 @@ const CAMERA_VEC    = Vec{Float64}(17.0, 16.0, 8.0)
 const DEFAULT_COLOR = Vec{Float64}(13.0, 13.0, 13.0)
 
 const EMPTY_VEC = Vec{Float64}()
-const SKY_VEC   = Vec{Float64}(0.7, 0.6, 1.0)
+const SKY_VEC   = Vec{Float64}(1.0, 1.0, 1.0)
 const STD_VEC   = Vec{Float64}(0.0, 0.0, 1.0)
 const FLOOR_PATTERN1  = Vec{Float64}(3.0, 1.0, 1.0)
 const FLOOR_PATTERN2  = Vec{Float64}(3.0, 3.0, 3.0)
@@ -250,7 +260,7 @@ end
 end
 
 nargs = length(ARGS)
-if nargs == 0 Rays.main(512, 512)
+if nargs == 0 Rays.main(768, 768)
 elseif nargs == 1 Rays.main(int(ARGS[1]), int(ARGS[1]))
 elseif nargs == 2 Rays.main(int(ARGS[1]), int(ARGS[2]))
 # ignore nprocs argument
