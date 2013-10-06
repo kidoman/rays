@@ -113,13 +113,22 @@ float R(unsigned int& seed) {
   return (float)(seed % 95) / (float)95;
 }
 
-int T(vector o,vector d,float& t,vector& n) {
+enum class Status {
+  kMissUpward,
+  kMissDownward,
+  kHit
+};
+
+Status tracer(vector o, vector d, float& t, vector& n) {
   t=1e9;
-  int m=0;
+  auto m = Status::kMissUpward;
   const float p=-o.z()/d.z();
 
-  if(.01f<p)
-    t=p,n=vector(0,0,1),m=1;
+  if(.01f < p) {
+    t = p;
+    n = vector(0.0f, 0.0f, 1.0f);
+    m = Status::kMissDownward;
+  }
 
   for (const auto& obj : objects) {
     const vector p = o + obj;
@@ -130,12 +139,15 @@ int T(vector o,vector d,float& t,vector& n) {
     if(b2>c) {
       const float q=b2-c, s=-b-sqrtf(q);
 
-      if(s<t && s>.01f)
-        t=s, n=p, m=2;
+      if(s < t && s > .01f) {
+        t = s;
+        n = p;
+        m = Status::kHit;
+      }
     }
   }
 
-  if (m == 2)
+  if (m == Status::kHit)
     n=!(n+d*t);
 
   return m;
@@ -146,10 +158,10 @@ vector S(vector o,vector d, unsigned int& seed) {
   vector n;
 
   //Search for an intersection ray Vs World.
-  const int m=T(o,d,t,n);
+  const auto m = tracer(o, d, t, n);
   const vector on = n;
 
-  if(!m) {
+  if(m == Status::kMissUpward) {
     float p = 1 - d.z();
     return vector(1.f, 1.f, 1.f) * p;
   }
@@ -159,10 +171,10 @@ vector S(vector o,vector d, unsigned int& seed) {
 
   float b=l%n;
 
-  if(b<0||T(h,l,t,n))
+  if(b < 0 || tracer(h, l, t, n) != Status::kMissUpward)
     b=0;
 
-  if(m&1) {   //m == 1
+  if(m == Status::kMissDownward) {
     h=h*.2f;
     return((int)(ceil(h.x())+ceil(h.y()))&1?vector(3,1,1):vector(3,3,3))*(b*.2f+.1f);
   }
