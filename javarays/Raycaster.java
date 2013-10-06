@@ -18,15 +18,25 @@ public final class Raycaster {
     };
 
     private final static char[][] art = {
-        "                   ".toCharArray(),
-        "    1111           ".toCharArray(),
-        "   1    1          ".toCharArray(),
-        "  1           11   ".toCharArray(),
-        "  1          1  1  ".toCharArray(),
-        "  1     11  1    1 ".toCharArray(),
-        "  1      1  1    1 ".toCharArray(),
-        "   1     1   1  1  ".toCharArray(),
-        "    11111     11   ".toCharArray()
+        " 1111            1     ".toCharArray(),
+        " 1   11         1 1    ".toCharArray(),
+        " 1     1       1   1   ".toCharArray(),
+        " 1     1      1     1  ".toCharArray(),
+        " 1    11     1       1 ".toCharArray(),
+        " 11111       111111111 ".toCharArray(),
+        " 1    1      1       1 ".toCharArray(),
+        " 1     1     1       1 ".toCharArray(),
+        " 1      1    1       1 ".toCharArray(),
+        "                       ".toCharArray(),
+        "1         1    11111   ".toCharArray(),
+        " 1       1    1        ".toCharArray(),
+        "  1     1    1         ".toCharArray(),
+        "   1   1     1         ".toCharArray(),
+        "    1 1       111111   ".toCharArray(),
+        "     1              1  ".toCharArray(),
+        "     1              1  ".toCharArray(),
+        "     1             1   ".toCharArray(),
+        "     1        111111   ".toCharArray()
     };
 
     static private vector[] F() {
@@ -51,7 +61,7 @@ public final class Raycaster {
     static byte[] bytes;
 
     // The '!' are for normalizing each vectors with ! operator.
-    static final vector g = (new vector(-5.5f, -16, 0)).norm(); // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
+    static final vector g = (new vector(-6.75f, -16, 1)).norm(); // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
 
     static final vector a = (STD_VEC.pow(g)).norm().mul(.002f);
     static final vector b = (g.pow(a)).norm().mul(.002f);

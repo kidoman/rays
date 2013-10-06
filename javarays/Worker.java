@@ -10,7 +10,7 @@ final class Worker implements Runnable  {
     private final vector DEF_COLOR   = new vector(13, 13, 13);
 
     private final vector EMPTY_VEC   = new vector();
-    private final vector SKY_VEC     = new vector(.7f, .6f, 1);
+    private final vector SKY_VEC     = new vector(1, 1, 1);
     private final vector STD_VEC     = new vector( 0,  0,  1);
     private final vector S_CONST_VEC = new vector(17, 16,  8);
     private final vector T_CONST_VEC = new vector( 0,  3, -4);
@@ -85,8 +85,6 @@ final class Worker implements Runnable  {
         if (m == 0) { // m==0
             // No sphere found and the ray goes upward: Generate a sky color
             float p = 1 - d.z;
-            p = p * p;
-            p = p * p;
             return SKY_VEC.mul(p);
         }
 
