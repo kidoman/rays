@@ -1,8 +1,8 @@
-package rays;
+package javarays;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-import rays.Raycaster.vector;
+import javarays.Raycaster.vector;
 
 final class Worker implements Runnable  {
 

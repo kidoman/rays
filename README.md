@@ -78,9 +78,9 @@ Java version
 ---
 
 * git clone git@github.com:kid0m4n/rays.git
-* cd rays/javarays
-* javac rays/Raycaster.java
-* time java rays.Raycaster > javarays.ppm
+* cd rays
+* javac javarays/Raycaster.java
+* time java javarays.Raycaster > javarays.ppm
 * open javarays.ppm
 
 Current Performance

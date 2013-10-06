@@ -1,4 +1,4 @@
-package rays;
+package javarays;
 
 import java.io.BufferedOutputStream;
 import java.util.Vector;
