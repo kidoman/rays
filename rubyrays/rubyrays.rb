@@ -3,8 +3,8 @@ require_relative 'camera'
 require_relative 'image'
 require_relative 'raytracer'
 
-width = (ARGV[0] && ARGV[0].to_i) || 512
-height = (ARGV[1] && ARGV[1].to_i) || 512
+width = (ARGV[0] && ARGV[0].to_i) || 768
+height = (ARGV[1] && ARGV[1].to_i) || 768
 threads = (ARGV[2] && ARGV[2].to_i) || 8
 
 art = Art.new
