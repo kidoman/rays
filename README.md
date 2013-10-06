@@ -50,6 +50,16 @@ Think of this as a great opportunity to learn the various nuances of these langu
 How to use
 ===
 
+Benchmark Run
+---
+
+The benchmark is to render a 768x768 image with the text:
+
+R A
+Y S
+
+A program is valid if it outputs a valid PPM image to STDOUT.
+
 Prerequisite
 ---
 
@@ -68,10 +78,13 @@ Go version
 C++ version
 ---
 
+C++ version also has a SSE variant which gets activated if RAYS_CPP_SSE is defined
+
 * git clone git@github.com:kid0m4n/rays.git
 * cd rays
-* c++ -std=c++11 -O3 -Wall -pthread -ffast-math -mtune=native -march=native -o cpprays cpprays/main.cpp
-* time ./cpprays > cpprays.ppm
+* **Normal**: c++ -std=c++11 -O3 -Wall -pthread -ffast-math -mtune=native -march=native -funroll-loops -Ofast -o bin/cpprays cpprays/main.cpp
+* **SSE**: c++ -std=c++11 -O3 -Wall -pthread -ffast-math -mtune=native -march=native -funroll-loops -Ofast -DRAYS_CPP_SSE -o bin/cpprays cpprays/main.cpp
+* time ./bin/cpprays > cpprays.ppm
 * open cpprays.ppm
 
 Java version
@@ -105,5 +118,6 @@ The following have contributed to the project one way or the other:
 * [Takayuki Matsuoka](https://github.com/t-mat)
 * [Tobias Kalbitz](https://github.com/tkalbitz)
 * [Marc Aldorasi](https://github.com/m42a)
+* [Lee Baker](https://github.com/leecbaker)
 
 Thanks to everyone for all the help given :)
