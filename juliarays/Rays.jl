@@ -58,13 +58,13 @@ function make_objects()
 end
 
 function pseudo_random(seed::Uint32)
-    seed += seed
-    seed ^= 1
-    if (int(seed) < 0)
-        seed ^= 0x88888eef
-    end
-    float(seed % 95) / float(95)
-    
+    #seed += seed
+    #seed ^= 1
+    #if (int(seed) < 0)
+    #    seed ^= 0x88888eef
+    #end
+    #float(seed % 95) / float(95)
+    rand() 
 end
 
 const objects = make_objects()
@@ -212,20 +212,17 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T}, seed::Uint32)
     #p = dot(l, r * sf)
     p = dot(l, r * (b > 0.0 ? 1.0 : 0.0))
     #@printf("p : %s, l: %s, rsf: %s\n", p, l, r*sf)
-    p33 = p * p
-    p33 = p33 * p33
-    p33 = p33 * p33
-    p33 = p33 * p33
-    p33 = p33 * p33
-    p33 = p33 * p
-    p = p33 * p33 * p33
-    #p = p ^ 33
+    #p33 = p * p
+    #p33 = p33 * p33
+    #p33 = p33 * p33
+    #p33 = p33 * p33
+    #p33 = p33 * p33
+    #p33 = p33 * p
+    #p = p33 * p33 * p33
+    p = p ^ 33
     # m == 2 a sphere was hit. cast a ray bouncing from sphere surface
-    sw = sample_world(h, r, seed) * 0.5
-    val = Vec{T}(p, p, p)
-    val2 = val + sw
     #@printf("\nHIT: %s\nval: %s\nworld: %s\np: %s\n\n", val2, val,  sw, p)
-    return val2
+    return Vec{T}(p, p, p) + sample_world(h, r, seed) * 0.5
 end
 
 const CAMERA_VEC = Vec{Float64}(17.0, 16.0, 8.0)
