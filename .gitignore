@@ -1,5 +1,9 @@
 *.svg
 *.ppm
 *.prof
+
+# ignore executables
 *.class
 /bin
+cpprays
+gorays
