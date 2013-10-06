@@ -65,9 +65,11 @@ func rnd(s *uint32) float64 {
 
 var (
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
-	size       = flag.Int("size", 512, "width of the rendered image")
+	mp         = flag.Int("mp", 1000, "size of the rendered image in megapixels")
 	procs      = flag.Int("procs", runtime.NumCPU(), "numbers of parallel renders")
 )
+
+var size int
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU() + 1)
@@ -87,24 +89,27 @@ func main() {
 		log.Fatalf("Procs (%v) needs to be >= 1", *procs)
 	}
 
-	fmt.Printf("P6 %v %v 255 ", *size, *size)
+	size = int(math.Sqrt(float64(*mp * 1000000)))
 
-	bytes := make([]byte, 3**size**size)
+	fmt.Printf("P6 %v %v 255 ", size, size)
+
+	bytes := make([]byte, 3*size*size)
 
 	g := vector.Vector{X: -3.1, Y: -16, Z: 3.2}.Normalize()
 	a := vector.Vector{X: 0, Y: 0, Z: 1}.CrossProduct(g).Normalize().Scale(0.002)
 	b := g.CrossProduct(a).Normalize().Scale(0.002)
 	c := a.Add(b).Scale(-256).Add(g)
+	ar := 512 / float64(size)
 
-	rows := make(chan row, *size)
+	rows := make(chan row, size)
 
 	var wg sync.WaitGroup
 	wg.Add(*procs)
 	for i := 0; i < *procs; i++ {
-		go worker(a, b, c, bytes, rows, &wg)
+		go worker(a, b, c, ar, bytes, rows, &wg)
 	}
 
-	for y := (*size - 1); y >= 0; y-- {
+	for y := (size - 1); y >= 0; y-- {
 		rows <- row(y)
 	}
 	close(rows)
@@ -117,16 +122,16 @@ func main() {
 
 type row int
 
-func (r row) render(a, b, c vector.Vector, bytes []byte, seed *uint32) {
-	k := (*size - int(r) - 1) * 3 * *size
+func (r row) render(a, b, c vector.Vector, ar float64, bytes []byte, seed *uint32) {
+	k := (size - int(r) - 1) * 3 * size
 
-	for x := (*size - 1); x >= 0; x-- {
+	for x := (size - 1); x >= 0; x-- {
 		p := vector.Vector{X: 13, Y: 13, Z: 13}
 
 		for i := 0; i < 64; i++ {
 			t := a.Scale(rnd(seed) - 0.5).Scale(99).Add(b.Scale(rnd(seed) - 0.5).Scale(99))
 			orig := vector.Vector{X: 17, Y: 16, Z: 8}.Add(t)
-			dir := t.Scale(-1).Add(a.Scale(rnd(seed) + float64(x*512)/float64(*size)).Add(b.Scale(rnd(seed) + float64(int(r)*512)/float64(*size))).Add(c).Scale(16)).Normalize()
+			dir := t.Scale(-1).Add(a.Scale(rnd(seed) + float64(x)*ar).Add(b.Scale(rnd(seed) + float64(r)*ar)).Add(c).Scale(16)).Normalize()
 			p = sampler(orig, dir, seed).Scale(3.5).Add(p)
 		}
 
@@ -138,14 +143,14 @@ func (r row) render(a, b, c vector.Vector, bytes []byte, seed *uint32) {
 	}
 }
 
-func worker(a, b, c vector.Vector, bytes []byte, rows <-chan row, wg *sync.WaitGroup) {
+func worker(a, b, c vector.Vector, ar float64, bytes []byte, rows <-chan row, wg *sync.WaitGroup) {
 	runtime.LockOSThread()
 	defer wg.Done()
 
 	seed := rand.Uint32()
 
 	for r := range rows {
-		r.render(a, b, c, bytes, &seed)
+		r.render(a, b, c, ar, bytes, &seed)
 	}
 }
 
