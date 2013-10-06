@@ -1,11 +1,11 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <math.h>
 #include <cstring>
 #include <random>
 #include <thread>
 #include <vector>
 #include <string>
+#include <iostream>
 
 #if defined(RAYS_CPP_SSE)
 #include <smmintrin.h>
@@ -239,8 +239,6 @@ int main(int argc, char **argv) {
     return x;
   }();
 
-  printf("P6 %d %d 255 ", w, h); // The PPM Header is issued
-
   const vector g=!vector(-6.75f, -16.f, 1.f),
     a=!(vector(0,0,1)^g) * .002f,
     b=!(g^a)*.002f,
@@ -279,5 +277,7 @@ int main(int argc, char **argv) {
     t.join();
   }
 
-  fwrite(bytes.data(), sizeof(bytes[0]), bytes.size(), stdout);
+  auto& output = std::cout;
+  output << "P6 " << w << " " << h << " 255 "; // The PPM Header is issued
+  output.write(bytes.data(), bytes.size());
 }
