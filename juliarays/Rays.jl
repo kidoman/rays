@@ -3,18 +3,16 @@ immutable Vec{T<:Real}
     y :: T
     z :: T
 
+    function Vec()
+        new(convert(T,0), convert(T,0), convert(T,0))
+    end
+
     function Vec(x::T, y::T, z::T)
         new(x, y, z)
     end 
     
     function Vec(v::Vec{T})
         new(v.x, v.y, v.z)
-    end
-
-    function Vec()
-        new(convert(T,0),
-            convert(T,0),
-            convert(T,0))
     end
 end
 
@@ -77,7 +75,7 @@ const HIT        = 2
 const NOHIT_DOWN = 1
 const NOHIT_UP   = 0
 
-const CAMERA_VEC = Vec{Float64}(17.0, 16.0, 8.0)
+const CAMERA_VEC    = Vec{Float64}(17.0, 16.0, 8.0)
 const DEFAULT_COLOR = Vec{Float64}(13.0, 13.0, 13.0)
 
 const EMPTY_VEC = Vec{Float64}()
@@ -103,7 +101,7 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
         bounce = STD_VEC
         st = NOHIT_DOWN
     end 
-   
+    last = nothing 
     for obj = objects
         p1 = orig + obj
         b  = dot(p1, dir)
@@ -116,13 +114,16 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
             s = -b - sqrt(q)
             if s < dist && s > 0.01
                 dist = s
-                bounce = p1
+                last = p1
+                #bounce = p1
                 st = HIT
             end
         end
     end
-    if st == HIT
-        bounce = norm(bounce + dir * dist)
+    #if st == HIT
+    if last != nothing
+        #bounce = norm(bounce + dir * dist)
+        bounce = norm(last + (dir * dist))
     end
     (st, dist, bounce)
 end
@@ -135,11 +136,11 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     # search for an intersection ray vs world 
     st, dist, bounce = intersect_test(orig, dir)
     
-    obounce = Vec{Float64}(bounce)
+    obounce = Vec{T}(bounce)
 
     if st == NOHIT_UP
         # no sphere found and the ray goes upward: generate sky color
-        p = 1 - dir.z
+        p = 1.0 - dir.z
         # p ^= 4
         p = p * p 
         p = p * p 
@@ -193,7 +194,8 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
 end
 
 
-function main(width, height)
+function main(width::Int64, height::Int64)
+    
     @assert width > 64 && height > 64 
     const header = bytestring("P6 $width $height 255 ")
     write(STDOUT, header)
@@ -208,11 +210,11 @@ function main(width, height)
     const b = norm(cross(g, a)) * 0.002 
     const c = (a + b) * -256.0 + g
  
-    size = 3 * width * height
+    const size = 3 * width * height
     bytes = Array(Uint8, size)
     
-    for y in 0:width-1
-        for x in 0:height-1
+    for y in 0:(height - 1)
+        for x in 0:(width - 1)
             p = DEFAULT_COLOR
             # cast 64 rays per pixel
             # (for blur (stochastic sampling) and soft shadows)
@@ -227,7 +229,7 @@ function main(width, height)
                 dir = norm(dir)
                 p = (sample_world(orig, norm(dir)) * 3.5) + p
             end
-            const idx = (height - y - 1) * width * 3 + (width - x - 1) * 3
+            idx = (height - y - 1) * width * 3 + (width - x - 1) * 3
             bytes[idx + 1] = uint8(p.x) # R
             bytes[idx + 2] = uint8(p.y) # G
             bytes[idx + 3] = uint8(p.z) # B
@@ -237,9 +239,9 @@ function main(width, height)
 end
 
 nargs = length(ARGS)
-if nargs == 0 main(512, 512)
+if nargs == 0     main(512, 512)
 elseif nargs == 1 main(int(ARGS[1]), int(ARGS[1]))
 elseif nargs == 2 main(int(ARGS[1]), int(ARGS[2]))
 elseif nargs == 3 main(int(ARGS[1]), int(ARGS[2]))
-else   println("Error: too many arguments")
+else println("Error: too many arguments")
 end
