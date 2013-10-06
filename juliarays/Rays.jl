@@ -1,4 +1,4 @@
-immutable Vec{T<:Float64}
+immutable Vec{T<:FloatingPoint}
     x :: T
     y :: T
     z :: T
@@ -7,6 +7,10 @@ immutable Vec{T<:Float64}
         new(x, y, z)
     end 
     
+    function Vec(v::Vec{T})
+        new(v.x, v.y, v.z)
+    end
+
     function Vec()
         new(0.0, 0.0, 0.0)
     end
@@ -134,62 +138,79 @@ end
 function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T}, seed::Uint32)
     # search for an intersection ray vs world 
     st, dist, bounce = intersect_test(orig, dir)
-    obounce = bounce
+    
+    # TODO: is this necessary??
+    obounce = Vec{T}(bounce)
 
     if st == NOHIT_UP
         # no sphere found and the ray goes upward: generate sky color
         p = 1 - dir.z
-        p = p * p
-        val = SKY_VEC * p
+        p = p * p 
+        p = p * p # p ^ 4 
+        return SKY_VEC * p
         #@printf("NO_HITUP: %s\n", val)
-        return val
     end
 
     # sphere was maybe hit
+    # (intersection coordinate)
     h = orig + dir * dist
     
     # l => dirction of light with random delta for soft shadows
-    l = Vec{T}(9 + pseudo_random(seed), 9 + pseudo_random(seed), 16.0)
+    l = Vec{T}(9.0 + pseudo_random(seed), 9.0 + pseudo_random(seed), 16.0)
     l = norm(l + (-1.0 * h))
     
     # calculate lambertian factor
-    @assert bounce != nothing
     b = dot(l, bounce)
 
     # calculate illumination factor
     # lambertian coeff > 0 or in shadow?
-    sf = 1.0 
+    #sf = 1.0 
+    #if b < 0.0
+    #    b  = 0.0
+    #    sf = 0.0
+    #else
+    #    st, _, _ = intersect_test(h, l)
+    #    if st != NOHIT_UP
+    #        b  = 0.0
+    #        sf = 0.0
+    #    end
+    #end
+    
     if b < 0.0
-        b  = 0.0
-        sf = 0.0
+        b = 0.0
     else
-        st, _, _ = intersect_test(h, l)
-        if st != NOHIT_UP
-            b  = 0.0
-            sf = 0.0
+        st1, _, _ = intersect_test(h, l)
+        if st1 != NOHIT_UP
+            b = 0.0
         end
+    end
+    
+    if st == NOHIT_DOWN
+        h = h * 0.2
+        return ((int(ceil(h.x) + ceil(h.y)) & 1) == 1 ? PATTERN2 : PATTERN2) * (b * 0.2 + 0.1)
     end
 
     # no sphere was hit and the ray was going downward:
     # generate floor color
-    if st == NOHIT_DOWN
-        h = h * 0.2
-        if int(ceil(h.x) + ceil(h.y)) & 1 == 1
-            pattern = PATTERN1
-        else
-            pattern = PATTERN2
-        end
-        #pattern = int(ceil(h.x) + ceil(h.y)) & 1 ? PATTERN1 : PATTERN2
-        val =  pattern * (b * 0.2 + 0.1)
-        #@printf("NOHIT_DOWN: %s\n",  val)
-        return val
-    end
+    #if st == NOHIT_DOWN
+    #    h = h * 0.2
+    #    if int(ceil(h.x) + ceil(h.y)) & 1 == 1
+    #        pattern = PATTERN1
+    #    else
+    #        pattern = PATTERN2
+    #    end
+    #    #pattern = int(ceil(h.x) + ceil(h.y)) & 1 ? PATTERN1 : PATTERN2
+    #    val =  pattern * (b * 0.2 + 0.1)
+    #    #@printf("NOHIT_DOWN: %s\n",  val)
+    #    return val
+    #end
 
     # half vector
     r = dir + obounce * dot(obounce, dir * -2.0)
     
     # calculate the color p with diffuse and specular component
-    p = dot(l, r * sf)
+    #p = dot(l, r * sf)
+    p = dot(l, r * (b > 0.0 ? 1.0 : 0.0))
     #@printf("p : %s, l: %s, rsf: %s\n", p, l, r*sf)
     p33 = p * p
     p33 = p33 * p33
