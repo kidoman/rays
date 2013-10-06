@@ -83,11 +83,11 @@ private:
 
 #endif
 
-using Objects = std::vector<vector>;
+typedef std::vector<vector> Objects;
 
 Objects objects;
 
-using Art = std::vector<std::string>;
+typedef std::vector<std::string> Art;
 
 Objects makeObjects(const Art& art) {
   Objects o;
