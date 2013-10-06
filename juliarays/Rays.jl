@@ -113,10 +113,18 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
         bounce = STD_VEC
         st = NOHIT_DOWN
     end 
+    tmpx = 0.0
+    tmpy = 0.0
+    tmpz = 0.0
     for obj = objects
-        p1 = orig + obj
-        b  = dot(p1, dir)
-        c  = dot(p1, p1) - 1
+        #p1 = orig + obj
+        #b  = dot(p1, dir)
+        #c  = dot(p1, p1) - 1
+        x = orig.x + obj.x
+        y = orig.y + obj.y
+        z = orig.z + obj.z
+        b = x * dir.x + y * dir.y + z * dir.z
+        c = (x * x  + y * y + z * z) - 1.0
         b2 = b * b
         # does the ray hit the sphere ? 
         if b2 > c
@@ -125,13 +133,21 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
             s = -b - sqrt(q)
             if s < dist && s > 0.01
                 dist = s
-                bounce = p1
+                #bounce = p1
+                tmpx = x
+  		tmpy = y
+                tmpz = z
                 st = HIT
             end
         end
     end
     if st == HIT
-        bounce = norm(bounce + dir * dist)
+        #bounce = norm(bounce + dir * dist)
+        tmpx += dir.x * dist
+        tmpy += dir.y * dist
+        tmpz += dir.z * dist
+        tmpDot = 1.0 / sqrt(tmpx * tmpx + tmpy * tmpy + tmpz * tmpz)
+        bounce = Vec{T}(tmpx*tmpDot, tmpy*tmpDot, tmpz*tmpDot)
     end
     (st, dist, bounce)
 end
