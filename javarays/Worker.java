@@ -34,6 +34,9 @@ final class Worker implements Runnable  {
         jump = _jump;
     }
 
+    static int yes = 0;
+    static int no  = 0;
+
     //The intersection test for line [o,v].
     // Return 2 if a hit was found (and also return distance t and bouncing ray n).
     // Return 0 if no hit was found but ray goes upward
@@ -51,12 +54,19 @@ final class Worker implements Runnable  {
         }
 
         o = o.add(T_CONST_VEC);
-        vector last = null;
+
+        boolean hit = false;
+        float tmpX = 0.f, tmpY = 0.f, tmpZ = 0.f;
+
         for(int i = 0; i < objects.length; i++) {
             // There is a sphere but does the ray hits it ?
-            final vector p1 = o.add(objects[i]);
-            final float b = p1.dot(d);
-            final float c = p1.dot(p1) - 1;
+            /* p1 */
+            final float _x = o.x + objects[i].x;
+            final float _y = o.y + objects[i].y;
+            final float _z = o.z + objects[i].z;
+
+            final float b = /* p1.add(d) */   _x*d.x+_y*d.y+_z*d.z;
+            final float c = /* p1.dot(p1) */ (_x*_x+_y*_y+_z*_z) - 1;
             final float b2 = b * b;
 
             // Does the ray hit the sphere ?
@@ -66,15 +76,23 @@ final class Worker implements Runnable  {
                 final float s = (float) (-b - Math.sqrt(q));
 
                 if (s < t && s > .01f) {
-                    last = p1;
+                    hit = true;
+                    tmpX = _x; tmpY = _y; tmpZ = _z;
                     t = s;
                     m = 2;
                 }
             }
         }
 
-        if(last != null) {
-            n = (last.add(d.mul(t))).norm();
+        if(hit) {
+            /* last.add(d.mul(t)) */
+            tmpX = tmpX + d.x * t;
+            tmpY = tmpY + d.y * t;
+            tmpZ = tmpZ + d.z * t;
+
+            /* norm */
+            final float tmpDot = 1.f / (float)Math.sqrt(tmpX * tmpX + tmpY * tmpY + tmpZ * tmpZ);
+            n = new vector(tmpX * tmpDot, tmpY * tmpDot, tmpZ * tmpDot);
         }
 
         return m;
@@ -85,7 +103,7 @@ final class Worker implements Runnable  {
     private final vector S(final vector o, final vector d) {
         // Search for an intersection ray Vs World.
         final int m = T(o, d);
-        final vector on = new vector(n);
+        final vector on = n;
 
         if (m == 0) { // m==0
             // No sphere found and the ray goes upward: Generate a sky color
