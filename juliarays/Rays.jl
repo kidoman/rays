@@ -165,8 +165,7 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     if st == NOHIT_DOWN
         h = h * 0.2
         # alternate -> if odd? pattern1 else pattern 2
-        pattern = int(ceil(h.x) + ceil(h.y)) & 1 == 1 ? PATTERN1 : PATTERN2
-        #pattern =  isodd(int(ceil(h.x) + ceil(h.y))) ? PATTERN1 : PATTERN2
+        pattern =  isodd(int(ceil(h.x) + ceil(h.y))) ? PATTERN1 : PATTERN2
         return pattern * (b * 0.2 + 0.1)
     end
 
