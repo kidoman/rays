@@ -46,7 +46,7 @@ function make_objects()
     for k in (nc-1):-1:0
         for j in (nr-1):-1:0
             if art[j+1][nc-k] != ' '
-                push!(objs, Vec{Float64}(-float(k), 3.0, -(nr - 1.0 - j) - 4.0))
+                push!(objs, Vec{Float64}(-float(k), 0.0, -(nr - 1.0 - j)))
             end
         end
     end
@@ -65,12 +65,19 @@ end
 
 const objects = make_objects()
 
+const SEED = uint32(10)
+
 const HIT        = 2
 const NOHIT_DOWN = 1
 const NOHIT_UP   = 0
 
-const STD_VEC   = Vec{Float64}(0.0, 0.0, 1.0)
+const DEF_COLOR = Vec{Float64}(13.0, 13.0, 13.0)
+
+const EMPTY_VEC = Vec{Float64}()
+const TRANS_CONST_VEC = Vec{Float64}(0.0, 3.0, -4.0)
+
 const SKY_VEC   = Vec{Float64}(0.7, 0.6, 1.0)
+const STD_VEC   = Vec{Float64}(0.0, 0.0, 1.0)
 const PATTERN1  = Vec{Float64}(3.0, 1.0, 1.0)
 const PATTERN2  = Vec{Float64}(3.0, 3.0, 3.0)
 
@@ -84,18 +91,22 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     st = NOHIT_UP
     p = -orig.z / dir.z
     
-    bounce = Vec{T}()
+    bounce = EMPTY_VEC
     
     if (0.01 < p)
         dist = p
         bounce = STD_VEC
         st = NOHIT_DOWN
     end 
-    
+   
+    orig = orig + TRANS_CONST_VEC
+    # adding nothing here gives a 4x speedup???
+    last = nothing
+
     for obj = objects
-        p = orig + obj
-        b = dot(p, dir)
-        c = dot(p, p) - 1
+        p1 = orig + obj
+        b = dot(p1, dir)
+        c = dot(p1, p1) - 1.0
         b2 = b * b
         # does the ray hit the sphere
         if b2 > c
@@ -104,13 +115,16 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
             s = -b - sqrt(q)
             if s < dist && s > 0.01
                 dist = s
-                bounce = p
+                last = p1
+                #bounce = p
                 st = HIT
             end
         end
     end
-    if st == HIT
-        bounce = norm(bounce + dir * dist)
+    #if st == HIT
+    if last != nothing
+        #bounce = norm(bounce + dir * dist)
+        bounce = norm(last + (dir * dist))
     end
     #@printf("st: %s, dist: %s, bounce: %s\n", st, dist, bounce)
     (st, dist, bounce)
@@ -194,8 +208,6 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T}, seed::Uint32)
 end
 
 const CAMERA_VEC = Vec{Float64}(17.0, 16.0, 8.0)
-const DEF_COLOR = Vec{Float64}(13.0, 13.0, 13.0)
-const SEED = uint32(10)
 
 function main()
     width  = 512
@@ -220,11 +232,9 @@ function main()
     for y in 1:512
         for x in 1:512
             p = DEF_COLOR
-            
             # cast 64 rays per pixel
             # (for blur (stochastic sampling) and soft shadows)
             for i in 1:64
-               
                 # a little bit of delta up/down and left/right
                 t = (a * (pseudo_random(SEED) - 0.5) * 99.0) + 
                     (b * (pseudo_random(SEED) - 0.5) * 99.0)
