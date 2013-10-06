@@ -46,14 +46,14 @@ const go_art = ["                   ",
                 "   1     1   1  1  ",
                 "    11111     11   "]
 
-const julia_art = ["                     ",
-                   "   11111    1        ",
-                   "     1      1        ",
-                   "     1      1 1      ",
-                   "     1 1  1 1    111 ",
-                   "     1 1  1 1 1 1  1 ",
-                   "  1  1 1  1 1 1 1  11",
-                   "  1111 1111 1 1 111 1"]
+#const julia_art = ["                     ",
+#                   "   11111    1        ",
+#                   "     1      1        ",
+#                   "     1      1 1      ",
+#                   "     1 1  1 1    111 ",
+#                   "     1 1  1 1 1 1  1 ",
+#                   "  1  1 1  1 1 1 1  11",
+#                   "  1111 1111 1 1 111 1"]
 
 const art = go_art
 
@@ -86,11 +86,6 @@ const STD_VEC   = Vec{Float64}(0.0, 0.0, 1.0)
 const FLOOR_PATTERN1  = Vec{Float64}(3.0, 1.0, 1.0)
 const FLOOR_PATTERN2  = Vec{Float64}(3.0, 3.0, 3.0)
 
-# the intersection test for line [o, v]
-# return HIT if a hit was found (and also return distance t and bouncing ray n)
-# return NOHIT_UP if no hit was found but ray goes upward
-# return NOHIT_DOWN if no hit was found but ray goes downward
-
 macro inline_dot(expr::Expr)
     if expr.head == :call && expr.args[1] == :dot
 	quote
@@ -100,31 +95,30 @@ macro inline_dot(expr::Expr)
         end 
     end
 end
-     
+
+# the intersection test for line [o, v]
+# return HIT if a hit was found (and also return distance t and bouncing ray n)
+# return NOHIT_UP if no hit was found but ray goes upward
+# return NOHIT_DOWN if no hit was found but ray goes downward
 function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
+    
     dist = 1e9
     st = NOHIT_UP
     p = -orig.z / dir.z
-    
     bounce = EMPTY_VEC
     
+    # downward ray
     if (0.01 < p)
         dist = p
         bounce = STD_VEC
         st = NOHIT_DOWN
     end 
-    tmpx = 0.0
-    tmpy = 0.0
-    tmpz = 0.0
+
+    # search for possible object hit
     for obj = objects
-        #p1 = orig + obj
-        #b  = dot(p1, dir)
-        #c  = dot(p1, p1) - 1
-        x = orig.x + obj.x
-        y = orig.y + obj.y
-        z = orig.z + obj.z
-        b = x * dir.x + y * dir.y + z * dir.z
-        c = (x * x  + y * y + z * z) - 1.0
+        p1 = orig + obj
+        b  = dot(p1, dir)
+        c  = dot(p1, p1) - 1
         b2 = b * b
         # does the ray hit the sphere ? 
         if b2 > c
@@ -133,28 +127,21 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
             s = -b - sqrt(q)
             if s < dist && s > 0.01
                 dist = s
-                #bounce = p1
-                tmpx = x
-  		tmpy = y
-                tmpz = z
+                bounce = p1
                 st = HIT
             end
         end
     end
+
+    # we hit an object, calculate the reflected ray vector
     if st == HIT
-        #bounce = norm(bounce + dir * dist)
-        tmpx += dir.x * dist
-        tmpy += dir.y * dist
-        tmpz += dir.z * dist
-        tmpDot = 1.0 / sqrt(tmpx * tmpx + tmpy * tmpy + tmpz * tmpz)
-        bounce = Vec{T}(tmpx*tmpDot, tmpy*tmpDot, tmpz*tmpDot)
+        bounce = norm(bounce + dir * dist)
     end
     (st, dist, bounce)
 end
 
 # sample the world and return the pixel color 
 # for a ray passing by point o and d direction
-
 function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     
     # search for an intersection ray vs world 
@@ -217,7 +204,6 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     return Vec{T}(p, p, p) + sample_world(h, r) * 0.5
 end
 
-
 function main(width::Int64, height::Int64)
     
     @assert width > 64 && height > 64 
@@ -261,13 +247,13 @@ function main(width::Int64, height::Int64)
     end
     write(STDOUT, bytes)
 end
-
 end
 
 nargs = length(ARGS)
-if nargs == 0     Rays.main(512, 512)
+if nargs == 0 Rays.main(512, 512)
 elseif nargs == 1 Rays.main(int(ARGS[1]), int(ARGS[1]))
 elseif nargs == 2 Rays.main(int(ARGS[1]), int(ARGS[2]))
+# ignore nprocs argument
 elseif nargs == 3 Rays.main(int(ARGS[1]), int(ARGS[2]))
 else println("Error: too many arguments")
 end

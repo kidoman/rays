@@ -33,6 +33,7 @@ Currently, the following versions are currently available, and tracked in their 
 * Go (optimized, multi-threaded)
 * C++ (optimized, multi-threaded)
 * Java (optimized, multi-threaded)
+* Julia (optimized, single-threaded)
 
 Please feel free to implement the benchmark (refer to the original C++ version [here](https://gist.github.com/kid0m4n/6680629)) in the language of your choice. All optimizations are welcome but try not to stray away too far from the spirit of the original algorithm. The existing implementations can always act as a litmus test.
 
@@ -56,6 +57,7 @@ Prerequisite
 * go 1.2rc1 or later
 * gcc 4.8.1 or later
 * Java 7 or later
+* Julia 0.2-prerelease
 * GIMP for opening the rendered images
 
 Go version
@@ -82,6 +84,13 @@ Java version
 * javac rays/Raycaster.java
 * time java rays.Raycaster > javarays.ppm
 * open javarays.ppm
+
+Julia version
+---
+* git clone git@github.com:kid0m4n/rays.git
+* cd rays/juliarays
+* time julia Rays.jl > juliarays.ppm
+* open juliarays.ppm
 
 Current Performance
 ===
