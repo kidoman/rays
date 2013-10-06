@@ -153,7 +153,7 @@ Status tracer(const Objects& objects, vector o, vector d, float& t, vector& n) {
   return m;
 }
 
-vector S(const Objects& objects, vector o,vector d, unsigned int& seed) {
+vector sampler(const Objects& objects, vector o,vector d, unsigned int& seed) {
   float t;
   vector n;
 
@@ -190,7 +190,7 @@ vector S(const Objects& objects, vector o,vector d, unsigned int& seed) {
   p33 = p33*p;
   p = p33*p33*p33;
 
-  return vector(p,p,p)+S(objects, h,r,seed)*.5;
+  return vector(p,p,p)+sampler(objects, h,r,seed)*.5;
 }
 
 int main(int argc, char **argv) {
@@ -258,7 +258,7 @@ int main(int argc, char **argv) {
         for(int r=64;r--;) {
           const vector t=a*(rnd(seed)-.5f)*99+b*(rnd(seed)-.5f)*99;
 
-          p=S(objects, vector(17,16,8)+t,
+          p=sampler(objects, vector(17,16,8)+t,
             !(t*-1+(a*(rnd(seed)+x)+b*(y+rnd(seed))+c)*16),
             seed)*3.5f+p;
         }
