@@ -32,8 +32,8 @@ Base.dot{T<:Real}(a::Vec{T}, b::Vec{T}) = a.x * b.x + a.y * b.y + a.z * b.z
 Base.cross{T<:Real}(a::Vec{T}, b::Vec{T}) = Vec{T}(a.y * b.z - a.z * b.y,
                                                    a.z * b.x - a.x * b.z,
                                                    a.x * b.y - a.y * b.x)
-# vector norm
-Base.norm{T<:Real}(a::Vec{T}) = a * (1.0 / sqrt(dot(a, a)))
+# unit vector
+unit{T<:Real}(a::Vec{T}) = a * (1.0 / sqrt(dot(a, a)))
 
 #const julia_art = ["                     ",
 #                   "   11111    1        ",
@@ -145,7 +145,7 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
 
     # we hit an object, calculate the reflected ray vector
     if st == HIT
-        bounce = norm(bounce + dir * dist)
+        bounce = unit(bounce + dir * dist)
     end
     (st, dist, bounce)
 end
@@ -174,7 +174,7 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     
     # l => dirction of light with random delta for soft shadows
     l = Vec{T}(9.0 + rand(), 9.0 + rand(), 16.0)
-    l = norm(l + (-1.0 * h))
+    l = unit(l + (-1.0 * h))
     
     # calculate lambertian factor
     b = dot(l, bounce)
@@ -221,13 +221,13 @@ function main(width::Int64, height::Int64)
     write(STDOUT, header)
 
     # camera direction
-    const g = norm(Vec{Float64}(-6.75, -16.0, 1.0))
+    const g = unit(Vec{Float64}(-6.75, -16.0, 1.0))
     
     # camera up vector
-    const a = norm(cross(STD_VEC, g)) * 0.002
+    const a = unit(cross(STD_VEC, g)) * 0.002
     
     # right vector 
-    const b = norm(cross(g, a)) * 0.002 
+    const b = unit(cross(g, a)) * 0.002 
     const c = ((a + b) * -256.0) + g
  
     const size = 3 * width * height
@@ -246,8 +246,8 @@ function main(width::Int64, height::Int64)
                 orig = CAMERA_VEC + t
                 dir = ((-1.0 * t) + (a * (rand() + float(x)) + 
                                      b * (rand() + float(y)) + c) * 16.0)
-                dir = norm(dir)
-                p = (sample_world(orig, norm(dir)) * 3.5) + p
+                dir = unit(dir)
+                p = (sample_world(orig, unit(dir)) * 3.5) + p
             end
             idx = (height - y - 1) * width * 3 + (width - x - 1) * 3
             bytes[idx + 1] = uint8(p.x) # R
