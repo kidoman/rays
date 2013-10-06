@@ -142,7 +142,7 @@ final class Worker implements Runnable  {
     private vector innerLoop(final int y, final int x, vector p) {
         // Cast 64 rays per pixel (For blur (stochastic sampling)
         // and soft-shadows.
-        for (int r = 256; r-- > 0;) {
+        for (int r = 64; r-- > 0;) {
             // The delta to apply to the origin of the view (For
             // Depth of View blur).
             final vector t = Raycaster.a.mul(ThreadLocalRandom.current().nextFloat()-.5f).mul(99.f).add(Raycaster.b.mul(ThreadLocalRandom.current().nextFloat()-.5f).mul(99.f)); // A little bit of delta up/down and left/right

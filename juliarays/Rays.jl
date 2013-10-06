@@ -81,8 +81,8 @@ const DEFAULT_COLOR = Vec{Float64}(13.0, 13.0, 13.0)
 const EMPTY_VEC = Vec{Float64}()
 const SKY_VEC   = Vec{Float64}(0.7, 0.6, 1.0)
 const STD_VEC   = Vec{Float64}(0.0, 0.0, 1.0)
-const PATTERN1  = Vec{Float64}(3.0, 1.0, 1.0)
-const PATTERN2  = Vec{Float64}(3.0, 3.0, 3.0)
+const FLOOR_PATTERN1  = Vec{Float64}(3.0, 1.0, 1.0)
+const FLOOR_PATTERN2  = Vec{Float64}(3.0, 3.0, 3.0)
 
 # the intersection test for line [o, v]
 # return HIT if a hit was found (and also return distance t and bouncing ray n)
@@ -101,7 +101,6 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
         bounce = STD_VEC
         st = NOHIT_DOWN
     end 
-    last = nothing 
     for obj = objects
         p1 = orig + obj
         b  = dot(p1, dir)
@@ -114,16 +113,13 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
             s = -b - sqrt(q)
             if s < dist && s > 0.01
                 dist = s
-                last = p1
-                #bounce = p1
+                bounce = p1
                 st = HIT
             end
         end
     end
-    #if st == HIT
-    if last != nothing
-        #bounce = norm(bounce + dir * dist)
-        bounce = norm(last + (dir * dist))
+    if st == HIT
+        bounce = norm(bounce + dir * dist)
     end
     (st, dist, bounce)
 end
@@ -169,7 +165,7 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     
     if st == NOHIT_DOWN
         h = h * 0.2
-        pattern = isodd(int(ceil(h.x) + ceil(h.y))) ? PATTERN1 : PATTERN2
+        pattern = isodd(int(ceil(h.x) + ceil(h.y))) ? FLOOR_PATTERN1 : FLOOR_PATTERN2
         return pattern * (b * 0.2 + 0.1)
     end
 
