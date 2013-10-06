@@ -118,10 +118,6 @@ float R(unsigned int& seed) {
   return (float)(seed % 95) / (float)95;
 }
 
-//The intersection test for line [o,v].
-// Return 2 if a hit was found (and also return distance t and bouncing ray n).
-// Return 0 if no hit was found but ray goes upward
-// Return 1 if no hit was found but ray goes downward
 int T(vector o,vector d,float& t,vector& n) {
   t=1e9;
   int m=0;
@@ -132,27 +128,20 @@ int T(vector o,vector d,float& t,vector& n) {
 
   o=o+vector(0,3,-4);
   for (const auto& obj : objects) {
-    // There is a sphere but does the ray hits it ?
     const vector p=o+vector(obj.k,0,obj.j);
     const float b=p%d,c=p%p-1,b2=b*b;
 
-    // Does the ray hit the sphere ?
     if(b2>c) {
-      //It does, compute the distance camera-sphere
       const float q=b2-c, s=-b-sqrtf(q);
 
       if(s<t && s>.01f)
-      // So far this is the minimum distance, save it. And also
-      // compute the bouncing ray vector into 'n'
-      t=s, n=!(p+d*t), m=2;
+        t=s, n=!(p+d*t), m=2;
     }
   }
 
   return m;
 }
 
-// (S)ample the world and return the pixel color for
-// a ray passing by point o (Origin) and d (Direction)
 vector S(vector o,vector d, unsigned int& seed) {
   float t;
   vector n;
@@ -162,33 +151,27 @@ vector S(vector o,vector d, unsigned int& seed) {
   const vector on = n;
 
   if(!m) { // m==0
-    //No sphere found and the ray goes upward: Generate a sky color
     float p = 1-d.z();
     p = p*p;
     p = p*p;
     return vector(.7f,.6f,1)*p;
   }
 
-  //A sphere was maybe hit.
+  vector h=o+d*t,
+    l=!(vector(9+R(seed),9+R(seed),16)+h*-1);
 
-  vector h=o+d*t,                    // h = intersection coordinate
-  l=!(vector(9+R(seed),9+R(seed),16)+h*-1);  // 'l' = direction to light (with random delta for soft-shadows).
-
-  //Calculated the lambertian factor
   float b=l%n;
 
-  //Calculate illumination factor (lambertian coefficient > 0 or in shadow)?
   if(b<0||T(h,l,t,n))
     b=0;
 
   if(m&1) {   //m == 1
-    h=h*.2f; //No sphere was hit and the ray was going downward: Generate a floor color
+    h=h*.2f;
     return((int)(ceil(h.x())+ceil(h.y()))&1?vector(3,1,1):vector(3,3,3))*(b*.2f+.1f);
   }
 
   const vector r=d+on*(on%d*-2);               // r = The half-vector
 
-  // Calculate the color 'p' with diffuse and specular component
   float p=l%r*(b>0);
   float p33 = p*p;
   p33 = p33*p33;
@@ -198,12 +181,9 @@ vector S(vector o,vector d, unsigned int& seed) {
   p33 = p33*p;
   p = p33*p33*p33;
 
-  //m == 2 A sphere was hit. Cast an ray bouncing from the sphere surface.
-  return vector(p,p,p)+S(h,r,seed)*.5; //Attenuate color by 50% since it is bouncing (* .5)
+  return vector(p,p,p)+S(h,r,seed)*.5;
 }
 
-// The main function. It generates a PPM image to stdout.
-// Usage of the program is hence: ./card > erk.ppm
 int main(int argc, char **argv) {
   const Art art {
     "                   ",
@@ -242,11 +222,10 @@ int main(int argc, char **argv) {
 
   printf("P6 %d %d 255 ", w, h); // The PPM Header is issued
 
-  // The '!' are for normalizing each vectors with ! operator.
-  const vector g=!vector(-5.5f,-16,0),       // Camera direction
-    a=!(vector(0,0,1)^g)*.002f, // Camera up vector...Seem Z is pointing up :/ WTF !
-    b=!(g^a)*.002f,        // The right vector, obtained via traditional cross-product
-    c=(a+b)*-256+g;       // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
+  const vector g=!vector(-5.5f,-16,0),
+    a=!(vector(0,0,1)^g) * .002f,
+    b=!(g^a)*.002f,
+    c=(a+b)*-256+g;
 
   std::vector<char> bytes(3 * w * h);
 
@@ -254,21 +233,15 @@ int main(int argc, char **argv) {
     for (int y=offset; y<h; y+=jump) {    //For each row
       int k = (h - y - 1) * w * 3;
 
-      for(int x=w;x--;) {   //For each pixel in a line
-        //Reuse the vector class to store not XYZ but a RGB pixel color
-        vector p(13,13,13);     // Default pixel color is almost pitch black
+      for(int x=w;x--;) {
+        vector p(13,13,13);
 
-        //Cast 64 rays per pixel (For blur (stochastic sampling) and soft-shadows.
         for(int r=64;r--;) {
-          // The delta to apply to the origin of the view (For Depth of View blur).
-          const vector t=a*(R(seed)-.5f)*99+b*(R(seed)-.5f)*99; // A little bit of delta up/down and left/right
+          const vector t=a*(R(seed)-.5f)*99+b*(R(seed)-.5f)*99;
 
-          // Set the camera focal point vector(17,16,8) and Cast the ray
-          // Accumulate the color returned in the p variable
-          p=S(vector(17,16,8)+t, //Ray Origin
-          !(t*-1+(a*(R(seed)+x)+b*(y+R(seed))+c)*16) // Ray Direction with random deltas
-                                         // for stochastic sampling
-          , seed)*3.5f+p; // +p for color accumulation
+          p=S(vector(17,16,8)+t,
+            !(t*-1+(a*(R(seed)+x)+b*(y+R(seed))+c)*16),
+            seed)*3.5f+p;
         }
 
         bytes[k++] = (char)p.x();
