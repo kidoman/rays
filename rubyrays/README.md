@@ -2,8 +2,14 @@
 
 This is a Ruby port of [the business card raytracer][1].
 
-It is a multithreaded implementation, meaning it would not be wise to
-run it on MRI. Use either [Rubinius][2] or [JRuby][3].
+The implementation is multithreaded, but unfortunately, MRI's GIL does
+not allow for thread-level parallelism. It is recommended to run on
+either [Rubinius][2] or [JRuby][3], which is an alternative Ruby
+implentation that does support real threading.
+
+## Prerequisites
+
+  * Ruby 1.9+
 
 ## Usage
 
