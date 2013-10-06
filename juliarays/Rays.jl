@@ -1,4 +1,4 @@
-immutable Vec{T<:FloatingPoint}
+immutable Vec{T<:Real}
     x :: T
     y :: T
     z :: T
@@ -12,46 +12,50 @@ immutable Vec{T<:FloatingPoint}
     end
 
     function Vec()
-        new(0.0, 0.0, 0.0)
+        new(convert(T,0),
+            convert(T,0),
+            convert(T,0))
     end
 end
 
 # vector add
-+{T<:FloatingPoint}(a::Vec{T}, b::Vec{T}) = Vec{T}(a.x + b.x, a.y + b.y, a.z + b.z)
++{T<:Real}(a::Vec{T}, b::Vec{T}) = Vec{T}(a.x + b.x, a.y + b.y, a.z + b.z)
 
 # vector scaling 
-*{T<:FloatingPoint}(a::Vec{T}, b::T) = Vec{T}(a.x * b, a.y * b, a.z * b)
-*{T<:FloatingPoint}(a::T, b::Vec{T}) = Vec{T}(a * b.x, a * b.y, a * b.z)
+*{T<:Real}(a::Vec{T}, b::T) = Vec{T}(a.x * b, a.y * b, a.z * b)
+*{T<:Real}(a::T, b::Vec{T}) = Vec{T}(a * b.x, a * b.y, a * b.z)
 
 # vector dot product
-Base.dot{T<:FloatingPoint}(a::Vec{T}, b::Vec{T}) = a.x * b.x + a.y * b.y + a.z * b.z
+Base.dot{T<:Real}(a::Vec{T}, b::Vec{T}) = a.x * b.x + a.y * b.y + a.z * b.z
 
 # vector cross product
-Base.cross{T<:FloatingPoint}(a::Vec{T}, b::Vec{T}) = Vec{T}(a.y * b.z - a.z * b.y,
-                                                            a.z * b.x - a.x * b.z,
-                                                            a.x * b.y - a.y * b.x)
+Base.cross{T<:Real}(a::Vec{T}, b::Vec{T}) = Vec{T}(a.y * b.z - a.z * b.y,
+                                                   a.z * b.x - a.x * b.z,
+                                                   a.x * b.y - a.y * b.x)
 # vector norm
-Base.norm{T<:FloatingPoint}(a::Vec{T}) = a * (1.0 / sqrt(dot(a, a)))
+Base.norm{T<:Real}(a::Vec{T}) = a * (1.0 / sqrt(dot(a, a)))
 
-#const art = ["                   ",
-#             "    1111           ",
-#             "   1    1          ",
-#             "  1           11   ",
-#             "  1          1  1  ",
-#             "  1     11  1    1 ",
-#             "  1      1  1    1 ",
-#             "   1     1   1  1  ",
-#             "    11111     11   "]
 
-const art = ["                     ",
-             "   11111    1        ",
-             "     1      1        ",
-             "     1      1 1      ",
-             "     1 1  1 1    111 ",
-             "     1 1  1 1 1 1  1 ",
-             "  1  1 1  1 1 1 1  11",
-             "  1111 1111 1 1 111 1"]
+const go_art = ["                   ",
+                "    1111           ",
+                "   1    1          ",
+                "  1           11   ",
+                "  1          1  1  ",
+                "  1     11  1    1 ",
+                "  1      1  1    1 ",
+                "   1     1   1  1  ",
+                "    11111     11   "]
 
+const julia_art = ["                     ",
+                   "   11111    1        ",
+                   "     1      1        ",
+                   "     1      1 1      ",
+                   "     1 1  1 1    111 ",
+                   "     1 1  1 1 1 1  1 ",
+                   "  1  1 1  1 1 1 1  11",
+                   "  1111 1111 1 1 111 1"]
+
+const art = julia_art
 
 function make_objects()
     nr = length(art)
@@ -69,17 +73,14 @@ end
 
 const objects = make_objects()
 
-const SEED = uint32(10)
-
 const HIT        = 2
 const NOHIT_DOWN = 1
 const NOHIT_UP   = 0
 
-const DEF_COLOR = Vec{Float64}(13.0, 13.0, 13.0)
+const CAMERA_VEC = Vec{Float64}(17.0, 16.0, 8.0)
+const DEFAULT_COLOR = Vec{Float64}(13.0, 13.0, 13.0)
 
 const EMPTY_VEC = Vec{Float64}()
-const TRANS_CONST_VEC = Vec{Float64}(0.0, 3.0, -4.0)
-
 const SKY_VEC   = Vec{Float64}(0.7, 0.6, 1.0)
 const STD_VEC   = Vec{Float64}(0.0, 0.0, 1.0)
 const PATTERN1  = Vec{Float64}(3.0, 1.0, 1.0)
@@ -103,9 +104,6 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
         st = NOHIT_DOWN
     end 
    
-    #the go version precomputes this
-    #orig = orig + TRANS_CONST_VEC
-    
     for obj = objects
         p1 = orig + obj
         b  = dot(p1, dir)
@@ -129,8 +127,11 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     (st, dist, bounce)
 end
 
-# sample the world and return the pixel color for a ray passing by point o and d direction
+# sample the world and return the pixel color 
+# for a ray passing by point o and d direction
+
 function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
+    
     # search for an intersection ray vs world 
     st, dist, bounce = intersect_test(orig, dir)
     
@@ -139,9 +140,10 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     if st == NOHIT_UP
         # no sphere found and the ray goes upward: generate sky color
         p = 1 - dir.z
+        # p ^= 4
         p = p * p 
-        p = p * p # p ^ 4 
-        return SKY_VEC * p
+        p = p * p 
+  	return SKY_VEC * p
     end
 
     # sphere was maybe hit
@@ -166,8 +168,7 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     
     if st == NOHIT_DOWN
         h = h * 0.2
-        # alternate -> if odd? pattern1 else pattern 2
-        pattern =  isodd(int(ceil(h.x) + ceil(h.y))) ? PATTERN1 : PATTERN2
+        pattern = isodd(int(ceil(h.x) + ceil(h.y))) ? PATTERN1 : PATTERN2
         return pattern * (b * 0.2 + 0.1)
     end
 
@@ -178,7 +179,7 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     p = dot(l, r * (b > 0.0 ? 1.0 : 0.0))
     
     #p ^= 33
-    # slightly faster ~%3 on my computer
+    # only slightly faster (~%5) on my computer
     p33 = p * p
     p33 = p33 * p33
     p33 = p33 * p33
@@ -191,7 +192,6 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     return Vec{T}(p, p, p) + sample_world(h, r) * 0.5
 end
 
-const CAMERA_VEC = Vec{Float64}(17.0, 16.0, 8.0)
 
 function main()
     const width  = 512
@@ -215,7 +215,7 @@ function main()
     
     for y in 0:width-1
         for x in 0:height-1
-            p = DEF_COLOR
+            p = DEFAULT_COLOR
             # cast 64 rays per pixel
             # (for blur (stochastic sampling) and soft shadows)
             for _ in 1:64
@@ -238,4 +238,4 @@ function main()
     write(STDOUT, bytes)
 end
 
-#main()
+main()
