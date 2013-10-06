@@ -128,7 +128,7 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     for obj = objects
         p1 = orig + obj
         b  = dot(p1, dir)
-        c  = dot(p1, p1) - 1
+        c  = dot(p1, p1) - 1.0
         b2 = b * b
         # does the ray hit the sphere ? 
         if b2 > c
@@ -221,14 +221,14 @@ function main(width::Int64, height::Int64)
     write(STDOUT, header)
 
     # camera direction
-    const g = norm(Vec{Float64}(-5.5, -16.0, 0.0))
+    const g = norm(Vec{Float64}(-6.75, -16.0, 1.0))
     
     # camera up vector
     const a = norm(cross(STD_VEC, g)) * 0.002
     
     # right vector 
     const b = norm(cross(g, a)) * 0.002 
-    const c = (a + b) * -256.0 + g
+    const c = ((a + b) * -256.0) + g
  
     const size = 3 * width * height
     bytes = Array(Uint8, size)
