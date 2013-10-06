@@ -7,5 +7,5 @@
 ## Usage
 
     $ go get -u github.com/kid0m4n/rays/gorays
-    $ time gorays > gorays.ppm
+    $ gorays
     $ open gorays.ppm
