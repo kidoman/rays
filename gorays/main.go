@@ -14,15 +14,25 @@ import (
 )
 
 var art = []string{
-	"                   ",
-	"    1111           ",
-	"   1    1          ",
-	"  1           11   ",
-	"  1          1  1  ",
-	"  1     11  1    1 ",
-	"  1      1  1    1 ",
-	"   1     1   1  1  ",
-	"    11111     11   ",
+	" 1111            1     ",
+	" 1   11         1 1    ",
+	" 1     1       1   1   ",
+	" 1     1      1     1  ",
+	" 1    11     1       1 ",
+	" 11111       111111111 ",
+	" 1    1      1       1 ",
+	" 1     1     1       1 ",
+	" 1      1    1       1 ",
+	"                       ",
+	"1         1    11111   ",
+	" 1       1    1        ",
+	"  1     1    1         ",
+	"   1   1     1         ",
+	"    1 1       111111   ",
+	"     1              1  ",
+	"     1              1  ",
+	"     1             1   ",
+	"     1        111111   ",
 }
 
 var objects = makeObjects()
@@ -55,8 +65,8 @@ func rnd(s *uint32) float64 {
 
 var (
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
-	width      = flag.Int("width", 512, "width of the rendered image")
-	height     = flag.Int("height", 512, "height of the rendered image")
+	width      = flag.Int("width", 768, "width of the rendered image")
+	height     = flag.Int("height", 768, "height of the rendered image")
 	procs      = flag.Int("procs", runtime.NumCPU(), "numbers of parallel renders")
 )
 
@@ -82,7 +92,7 @@ func main() {
 
 	bytes := make([]byte, 3**width**height)
 
-	g := vector.Vector{X: -5.5, Y: -16, Z: 0}.Normalize()
+	g := vector.Vector{X: -6.75, Y: -16, Z: 1}.Normalize()
 	a := vector.Vector{X: 0, Y: 0, Z: 1}.CrossProduct(g).Normalize().Scale(0.002)
 	b := g.CrossProduct(a).Normalize().Scale(0.002)
 	c := a.Add(b).Scale(-256).Add(g)
@@ -146,9 +156,7 @@ func sampler(orig, dir vector.Vector, seed *uint32) vector.Vector {
 
 	if st == missUpward {
 		p := 1 - dir.Z
-		p = p * p
-		p = p * p
-		return vector.Vector{X: 0.7, Y: 0.6, Z: 1}.Scale(p)
+		return vector.Vector{X: 1, Y: 1, Z: 1}.Scale(p)
 	}
 
 	h := orig.Add(dir.Scale(dist))
