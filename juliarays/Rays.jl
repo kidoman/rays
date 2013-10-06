@@ -33,15 +33,25 @@ Base.cross{T<:FloatingPoint}(a::Vec{T}, b::Vec{T}) = Vec{T}(a.y * b.z - a.z * b.
 # vector norm
 Base.norm{T<:FloatingPoint}(a::Vec{T}) = a * (1.0 / sqrt(dot(a, a)))
 
-const art = ["                   ",
-             "    1111           ",
-             "   1    1          ",
-             "  1           11   ",
-             "  1          1  1  ",
-             "  1     11  1    1 ",
-             "  1      1  1    1 ",
-             "   1     1   1  1  ",
-             "    11111     11   "]
+#const art = ["                   ",
+#             "    1111           ",
+#             "   1    1          ",
+#             "  1           11   ",
+#             "  1          1  1  ",
+#             "  1     11  1    1 ",
+#             "  1      1  1    1 ",
+#             "   1     1   1  1  ",
+#             "    11111     11   "]
+
+const art = ["                     ",
+             "   11111    1        ",
+             "     1      1        ",
+             "     1      1 1      ",
+             "     1 1  1 1    111 ",
+             "     1 1  1 1 1 1  1 ",
+             "  1  1 1  1 1 1 1  11",
+             "  1111 1111 1 1 111 1"]
+
 
 function make_objects()
     nr = length(art)
@@ -63,7 +73,8 @@ function pseudo_random(seed::Uint32)
     if (int(seed) < 0)
         seed ^= 0x88888eef
     end
-    float(seed % 95) / float(95)
+    val = float(seed % 95) / float(95)
+    (val, seed)
 end
 
 const objects = make_objects()
@@ -101,7 +112,8 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
         bounce = STD_VEC
         st = NOHIT_DOWN
     end 
-    
+   
+    #the go version precomputes this
     #orig = orig + TRANS_CONST_VEC
     
     for obj = objects
