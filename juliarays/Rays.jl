@@ -55,7 +55,7 @@ const julia_art = ["                     ",
                    "  1  1 1  1 1 1 1  11",
                    "  1111 1111 1 1 111 1"]
 
-const art = julia_art
+const art = go_art
 
 function make_objects()
     nr = length(art)
@@ -193,10 +193,8 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
 end
 
 
-function main()
-    const width  = 512
-    const height = 512
-    
+function main(width, height)
+    @assert width > 64 && height > 64 
     const header = bytestring("P6 $width $height 255 ")
     write(STDOUT, header)
 
@@ -238,4 +236,10 @@ function main()
     write(STDOUT, bytes)
 end
 
-main()
+nargs = length(ARGS)
+if nargs == 0 main(512, 512)
+elseif nargs == 1 main(int(ARGS[1]), int(ARGS[1]))
+elseif nargs == 2 main(int(ARGS[1]), int(ARGS[2]))
+elseif nargs == 3 main(int(ARGS[1]), int(ARGS[2]))
+else   println("Error: too many arguments")
+end
