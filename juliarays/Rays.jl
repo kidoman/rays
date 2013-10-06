@@ -50,7 +50,7 @@ function make_objects()
     for k in (nc-1):-1:0
         for j in (nr-1):-1:0
             if art[j+1][nc-k] != ' '
-                push!(objs, Vec{Float64}(-float(k), 0.0, -(nr - 1.0 - j)))
+                push!(objs, Vec{Float64}(-float(k), 3.0, -(nr - 1.0 - j) - 4.0))
             end
         end
     end
@@ -58,13 +58,12 @@ function make_objects()
 end
 
 function pseudo_random(seed::Uint32)
-    #seed += seed
-    #seed ^= 1
-    #if (int(seed) < 0)
-    #    seed ^= 0x88888eef
-    #end
-    #float(seed % 95) / float(95)
-    rand() 
+    seed += seed
+    seed ^= 1
+    if (int(seed) < 0)
+        seed ^= 0x88888eef
+    end
+    float(seed % 95) / float(95)
 end
 
 const objects = make_objects()
@@ -86,9 +85,9 @@ const PATTERN1  = Vec{Float64}(3.0, 1.0, 1.0)
 const PATTERN2  = Vec{Float64}(3.0, 3.0, 3.0)
 
 # the intersection test for line [o, v]
-# return 2 if a hit was found (and also return distance t and bouncing ray n)
-# return 0 if no hit was found but ray goes upward
-# return 1 if no hist was found but ray goes downward
+# return HIT if a hit was found (and also return distance t and bouncing ray n)
+# return NOHIT_UP if no hit was found but ray goes upward
+# return NOHIT_DOWN if no hit was found but ray goes downward
 
 function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     dist = 1e9
@@ -102,45 +101,38 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
         bounce = STD_VEC
         st = NOHIT_DOWN
     end 
-   
-    orig = orig + TRANS_CONST_VEC
-    # adding nothing here gives a 4x speedup???
-    last = nothing
-
+    
+    #orig = orig + TRANS_CONST_VEC
+    
     for obj = objects
         p1 = orig + obj
-        b = dot(p1, dir)
-        c = dot(p1, p1) - 1.0
+        b  = dot(p1, dir)
+        c  = dot(p1, p1) - 1.0
         b2 = b * b
-        # does the ray hit the sphere
+        # does the ray hit the sphere ? 
         if b2 > c
-            # it does, compute the distance camera -> sphere
+            # it does, compute the camera -> sphere dist
             q = b2 - c 
             s = -b - sqrt(q)
             if s < dist && s > 0.01
                 dist = s
-                last = p1
-                #bounce = p
+                bounce = p1
                 st = HIT
             end
         end
     end
-    #if st == HIT
-    if last != nothing
-        #bounce = norm(bounce + dir * dist)
-        bounce = norm(last + (dir * dist))
+    if st == HIT
+        bounce = norm(bounce + dir * dist)
     end
-    #@printf("st: %s, dist: %s, bounce: %s\n", st, dist, bounce)
     (st, dist, bounce)
 end
 
 # sample the world and return the pixel color for a ray passing by point o and d direction
-function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T}, seed::Uint32)
+function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     # search for an intersection ray vs world 
     st, dist, bounce = intersect_test(orig, dir)
     
-    # TODO: is this necessary??
-    obounce = Vec{T}(bounce)
+    obounce = Vec{Float64}(bounce)
 
     if st == NOHIT_UP
         # no sphere found and the ray goes upward: generate sky color
@@ -148,7 +140,6 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T}, seed::Uint32)
         p = p * p 
         p = p * p # p ^ 4 
         return SKY_VEC * p
-        #@printf("NO_HITUP: %s\n", val)
     end
 
     # sphere was maybe hit
@@ -156,26 +147,12 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T}, seed::Uint32)
     h = orig + dir * dist
     
     # l => dirction of light with random delta for soft shadows
-    l = Vec{T}(9.0 + pseudo_random(seed), 9.0 + pseudo_random(seed), 16.0)
+    l = Vec{T}(9.0 + rand(), 9.0 + rand(), 16.0)
     l = norm(l + (-1.0 * h))
     
     # calculate lambertian factor
     b = dot(l, bounce)
 
-    # calculate illumination factor
-    # lambertian coeff > 0 or in shadow?
-    #sf = 1.0 
-    #if b < 0.0
-    #    b  = 0.0
-    #    sf = 0.0
-    #else
-    #    st, _, _ = intersect_test(h, l)
-    #    if st != NOHIT_UP
-    #        b  = 0.0
-    #        sf = 0.0
-    #    end
-    #end
-    
     if b < 0.0
         b = 0.0
     else
@@ -187,98 +164,74 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T}, seed::Uint32)
     
     if st == NOHIT_DOWN
         h = h * 0.2
-        return ((int(ceil(h.x) + ceil(h.y)) & 1) == 1 ? PATTERN2 : PATTERN2) * (b * 0.2 + 0.1)
+        # alternate -> if odd? pattern1 else pattern 2
+        pattern = int(ceil(h.x) + ceil(h.y)) & 1 == 1 ? PATTERN1 : PATTERN2
+        #pattern =  isodd(int(ceil(h.x) + ceil(h.y))) ? PATTERN1 : PATTERN2
+        return pattern * (b * 0.2 + 0.1)
     end
-
-    # no sphere was hit and the ray was going downward:
-    # generate floor color
-    #if st == NOHIT_DOWN
-    #    h = h * 0.2
-    #    if int(ceil(h.x) + ceil(h.y)) & 1 == 1
-    #        pattern = PATTERN1
-    #    else
-    #        pattern = PATTERN2
-    #    end
-    #    #pattern = int(ceil(h.x) + ceil(h.y)) & 1 ? PATTERN1 : PATTERN2
-    #    val =  pattern * (b * 0.2 + 0.1)
-    #    #@printf("NOHIT_DOWN: %s\n",  val)
-    #    return val
-    #end
 
     # half vector
     r = dir + obounce * dot(obounce, dir * -2.0)
     
     # calculate the color p with diffuse and specular component
-    #p = dot(l, r * sf)
     p = dot(l, r * (b > 0.0 ? 1.0 : 0.0))
-    #@printf("p : %s, l: %s, rsf: %s\n", p, l, r*sf)
-    #p33 = p * p
-    #p33 = p33 * p33
-    #p33 = p33 * p33
-    #p33 = p33 * p33
-    #p33 = p33 * p33
-    #p33 = p33 * p
-    #p = p33 * p33 * p33
-    p = p ^ 33
-    # m == 2 a sphere was hit. cast a ray bouncing from sphere surface
-    #@printf("\nHIT: %s\nval: %s\nworld: %s\np: %s\n\n", val2, val,  sw, p)
-    return Vec{T}(p, p, p) + sample_world(h, r, seed) * 0.5
+    
+    #p ^= 33
+    # slightly faster ~%3 on my computer
+    p33 = p * p
+    p33 = p33 * p33
+    p33 = p33 * p33
+    p33 = p33 * p33
+    p33 = p33 * p33
+    p33 = p33 * p
+    p = p33 * p33 * p33 
+    
+    # st == HIT a sphere was hit. cast a ray bouncing from sphere surface
+    return Vec{T}(p, p, p) + sample_world(h, r) * 0.5
 end
 
 const CAMERA_VEC = Vec{Float64}(17.0, 16.0, 8.0)
 
 function main()
-    width  = 512
-    height = 512
+    const width  = 512
+    const height = 512
     
-    header = bytestring("P6 $width $height 255 ")
+    const header = bytestring("P6 $width $height 255 ")
     write(STDOUT, header)
 
     # camera direction
-    g = norm(Vec{Float64}(-5.5, -16.0, 0.0))
+    const g = norm(Vec{Float64}(-5.5, -16.0, 0.0))
     
     # camera up vector
-    a = norm(cross(STD_VEC, g)) * 0.002
+    const a = norm(cross(STD_VEC, g)) * 0.002
     
     # right vector 
-    b = norm(cross(g, a)) * 0.002 
-    c = (a + b) * -256.0 + g
+    const b = norm(cross(g, a)) * 0.002 
+    const c = (a + b) * -256.0 + g
  
     size = 3 * width * height
     bytes = Array(Uint8, size)
     
-    for y in 1:512
-        for x in 1:512
+    for y in 0:width-1
+        for x in 0:height-1
             p = DEF_COLOR
             # cast 64 rays per pixel
             # (for blur (stochastic sampling) and soft shadows)
-            for i in 1:64
+            for _ in 1:64
                 # a little bit of delta up/down and left/right
-                t = (a * (pseudo_random(SEED) - 0.5) * 99.0) + 
-                    (b * (pseudo_random(SEED) - 0.5) * 99.0)
-                
+                t = (a * (rand() - 0.5) * 99.0) + (b * (rand() - 0.5) * 99.0)
                 # set the camera focal point (17,16,8) and cast the ray
                 # accumulate the color returned in the p variable
                 orig = CAMERA_VEC + t
-                dir = ((-1.0 * t) + (a * (pseudo_random(SEED) + float(x-1)) + 
-                                     b * (pseudo_random(SEED) + float(y-1)) + c) * 16.0)
+                dir = ((-1.0 * t) + (a * (rand() + float(x)) + 
+                                     b * (rand() + float(y)) + c) * 16.0)
                 dir = norm(dir)
-                #println("\n-----------------------------------")
-                #@printf("%d: orig: %s\ndir: %s\nnorm %s\np:%s\n",i,  orig, dir, norm(dir), p)
-                #println("-----------------------------------\n")
-                p = (sample_world(orig, norm(dir), SEED) * 3.5) + p
+                p = (sample_world(orig, norm(dir)) * 3.5) + p
             end
-            # possible bug? cannot assign array element from uint8, due to inexact error
-            #@printf("%d, %d, %s\n", x, y, p) 
-            #@printf("%f, %f, %f\n", p.x, p.y, p.z)
-            pix_r = p.x #< 1.0 ? 0.0 : p.x > 255.0 ? 255.0 : p.x
-            pix_g = p.y #< 1.0 ? 0.0 : p.y > 255.0 ? 255.0 : p.y
-            pix_b = p.z #< 1.0 ? 0.0 : p.z > 255.0 ? 255.0 : p.z
-           
-            #@printf("%c%c%c", p.x, p.y, p.z)
-            bytes[(y-1) * width * 3 + (x-1) * 3 + 1] = uint8(pix_r)
-            bytes[(y-1) * width * 3 + (x-1) * 3 + 2] = uint8(pix_g)
-            bytes[(y-1) * width * 3 + (x-1) * 3 + 3] = uint8(pix_b)
+            const idx = (height - y - 1) * width * 3 + (width - x - 1) * 3
+            bytes[idx + 1] = uint8(p.x) # R
+            bytes[idx + 2] = uint8(p.y) # G
+            bytes[idx + 3] = uint8(p.z) # B
         end
     end
     write(STDOUT, bytes)
