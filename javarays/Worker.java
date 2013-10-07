@@ -28,6 +28,8 @@ final class Worker implements Runnable  {
     private final int offset;
     private final int jump;
 
+    private final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+
     private final vector[] objects;
 
     private float t;
@@ -100,11 +102,11 @@ final class Worker implements Runnable  {
 
         // A sphere was maybe hit.
         vector h = o.add(d.scale(t)); // h = intersection coordinate
-        final float _x = 9.f + ThreadLocalRandom.current().nextFloat();
-        final float _y = 9.f + ThreadLocalRandom.current().nextFloat();
 
         // 'l' = direction to light (with random delta for soft-shadows).
-        final vector l = new vector(_x, _y, 16.f).add(h.scale(-1.f)).norm();
+        final vector l = new vector(9.f + rnd.nextFloat(),
+                                    9.f + rnd.nextFloat(),
+                                    16.f).add(h.scale(-1.f)).norm();
 
         // Calculated the lambertian factor
         float b = l.dot(n);
@@ -158,16 +160,16 @@ final class Worker implements Runnable  {
         for (int r = 0; r < 64; r++) {
             // The delta to apply to the origin of the view (For
             // Depth of View blur).
-            final float factor1 = (ThreadLocalRandom.current().nextFloat()-.5f) * 99.f;
-            final float factor2 = (ThreadLocalRandom.current().nextFloat()-.5f) * 99.f;
+            final float factor1 = (rnd.nextFloat()-.5f) * 99.f;
+            final float factor2 = (rnd.nextFloat()-.5f) * 99.f;
             final vector t = a.scale(factor1).add(b.scale(factor2)); // A little bit of delta up/down and left/right
 
             // Set the camera focal point vector(17,16,8) and Cast the ray
             // Accumulate the color returned in the p variable
 
             // Ray Direction with random deltas
-            final vector tmpA = a.scale(ThreadLocalRandom.current().nextFloat() + x * aspectRatio);
-            final vector tmpB = b.scale(ThreadLocalRandom.current().nextFloat() + y * aspectRatio);
+            final vector tmpA = a.scale(rnd.nextFloat() + x * aspectRatio);
+            final vector tmpB = b.scale(rnd.nextFloat() + y * aspectRatio);
             final vector tmpC = tmpA.add(tmpB).add(Raycaster.c);
             final vector rayDirection = t.scale(-1).add(tmpC.scale(16.f)).norm();
 
