@@ -99,7 +99,7 @@ Objects makeObjects(const Art& art) {
     auto x = 1.0f - static_cast<float>(line.size());
     for(const auto& c : line) {
       if(' ' != c) {
-        o.emplace_back(x, 3, y - 4);
+        o.emplace_back(x, 3.0f, y - 4.0f);
       }
       x += 1.0f;
     }
@@ -113,7 +113,7 @@ float rnd(unsigned int& seed) {
   seed ^= 1;
   if ((int)seed < 0)
     seed ^= 0x88888eef;
-  return (float)(seed % 95) / (float)95;
+  return static_cast<float>(seed % 95) * (1.0f / 95.0f);
 }
 
 enum class Status {
@@ -123,7 +123,7 @@ enum class Status {
 };
 
 Status tracer(const Objects& objects, vector o, vector d, float& t, vector& n) {
-  t=1e9;
+  t=1e9f;
   auto m = Status::kMissUpward;
   const float p=-o.z()/d.z();
 
@@ -136,7 +136,7 @@ Status tracer(const Objects& objects, vector o, vector d, float& t, vector& n) {
   for (const auto& obj : objects) {
     const vector p = o + obj;
     const float b = p % d,
-      c = p%p-1,
+      c = p%p-1.0f,
       b2 = b * b;
 
     if(b2>c) {
@@ -170,19 +170,19 @@ vector sampler(const Objects& objects, vector o,vector d, unsigned int& seed) {
   }
 
   vector h=o+d*t,
-    l=!(vector(9+rnd(seed),9+rnd(seed),16)+h*-1);
+    l=!(vector(9.0f+rnd(seed),9.0f+rnd(seed),16.0f)+h*-1);
 
   float b=l%n;
 
-  if(b < 0 || tracer(objects, h, l, t, n) != Status::kMissUpward)
-    b=0;
+  if(b < 0.0f || tracer(objects, h, l, t, n) != Status::kMissUpward)
+    b=0.0f;
 
   if(m == Status::kMissDownward) {
     h=h*.2f;
-    return((int)(ceil(h.x())+ceil(h.y()))&1?vector(3,1,1):vector(3,3,3))*(b*.2f+.1f);
+    return((int)(ceil(h.x())+ceil(h.y()))&1?vector(3.0f,1.0f,1.0f):vector(3.0f,3.0f,3.0f))*(b*.2f+.1f);
   }
 
-  const vector r=d+on*(on%d*-2);               // r = The half-vector
+  const vector r=d+on*(on%d*-2.0f);               // r = The half-vector
 
   float p=l%r*(b>0);
   float p33 = p*p;
@@ -193,7 +193,7 @@ vector sampler(const Objects& objects, vector o,vector d, unsigned int& seed) {
   p33 = p33*p;
   p = p33*p33*p33;
 
-  return vector(p,p,p)+sampler(objects, h,r,seed)*.5;
+  return vector(p,p,p)+sampler(objects, h,r,seed)*.5f;
 }
 
 int main(int argc, char **argv) {
@@ -250,7 +250,7 @@ int main(int argc, char **argv) {
   const vector g=!vector(-6.75f, -16.f, 1.f),
     a=!(vector(0,0,1)^g) * .002f,
     b=!(g^a)*.002f,
-    c=(a+b)*-256+g;
+    c=(a+b)*-256.0f+g;
 
   std::vector<char> bytes(3 * w * h);
 
@@ -259,13 +259,13 @@ int main(int argc, char **argv) {
       int k = (h - y - 1) * w * 3;
 
       for(int x=w;x--;) {
-        vector p(13,13,13);
+        vector p(13.0f,13.0f,13.0f);
 
         for(int r=64;r--;) {
-          const vector t=a*(rnd(seed)-.5f)*99+b*(rnd(seed)-.5f)*99;
+          const vector t=a*(rnd(seed)-.5f)*99.0f+b*(rnd(seed)-.5f)*99.0f;
 
-          p=sampler(objects, vector(17,16,8)+t,
-            !(t*-1+(a*(rnd(seed)+x)+b*(y+rnd(seed))+c)*16),
+          p=sampler(objects, vector(17.0f,16.0f,8.0f)+t,
+            !(t*-1.0f+(a*(rnd(seed)+x)+b*(y+rnd(seed))+c)*16.0f),
             seed)*3.5f+p;
         }
 
