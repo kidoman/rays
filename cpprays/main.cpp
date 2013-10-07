@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <chrono>
 
 #if defined(RAYS_CPP_SSE)
 #include <smmintrin.h>
@@ -83,6 +84,8 @@ private:
 
 #endif
 
+typedef std::chrono::high_resolution_clock Clock;
+typedef std::chrono::duration<double> ClockSec;
 typedef std::vector<vector> Objects;
 
 Objects objects;
@@ -194,6 +197,8 @@ vector sampler(const Objects& objects, vector o,vector d, unsigned int& seed) {
 }
 
 int main(int argc, char **argv) {
+  auto& outlog = std::cerr;
+
   const Art art {
     " 1111            1     ",
     " 1   11         1 1    ",
@@ -226,7 +231,8 @@ int main(int argc, char **argv) {
   };
 
   const auto w = getIntArg(1, 768);
-  const auto h = getIntArg(2, 768);
+  const auto h = w;
+  const auto iterations = getIntArg(2, 1);
   const auto num_threads = [&]() {
     int x = getIntArg(3, 0);
     if(x <= 0) {
@@ -238,6 +244,8 @@ int main(int argc, char **argv) {
     }
     return x;
   }();
+
+  const auto overallDurationBegin = Clock::now();
 
   const vector g=!vector(-6.75f, -16.f, 1.f),
     a=!(vector(0,0,1)^g) * .002f,
@@ -276,6 +284,10 @@ int main(int argc, char **argv) {
   for(auto& t : threads) {
     t.join();
   }
+
+  const auto overallDurationEnd = Clock::now();
+  const auto overallDuration = static_cast<ClockSec>(overallDurationEnd - overallDurationBegin);
+  outlog << "Average time taken " << (overallDuration.count() / iterations) << "s" << std::endl;
 
   auto& output = std::cout;
   output << "P6 " << w << " " << h << " 255 "; // The PPM Header is issued
