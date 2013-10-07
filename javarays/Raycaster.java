@@ -5,18 +5,6 @@ import java.util.Vector;
 
 public final class Raycaster {
 
-    final static class vector {
-        public final float x,y,z;  // Vector has three float attributes.
-        public vector() {x=y=z=0.f;}                                                //Empty constructor
-        public vector(final vector v) {x=v.x;y=v.y;z=v.z;}                          //Empty constructor
-        public vector(final float a,final float b,final float c) {x=a;y=b;z=c;}     //Constructor
-        public vector add(final vector r) {return new vector(x+r.x,y+r.y,z+r.z);}   //Vector add
-        public float  dot(final vector r) {return x*r.x+y*r.y+z*r.z;}               //Vector dot product
-        public vector scale(final float r)  {return new vector(x*r,y*r,z*r);}         //Vector scaling
-        public vector norm() {return scale((float)(1.f/Math.sqrt(dot(this))));}       // Used later for normalizing the vector
-        public vector cross(final vector r) {return new vector(y*r.z-z*r.y,z*r.x-x*r.z,x*r.y-y*r.x);} //Cross-product
-    };
-
     private final static char[][] art = {
         " 11111           1     ".toCharArray(),
         " 1    1         1 1    ".toCharArray(),
@@ -39,20 +27,20 @@ public final class Raycaster {
         "     1        111111   ".toCharArray()
     };
 
-    static private vector[] buildObjects() {
-        final Vector<vector> tmp = new Vector<>(art.length * art[0].length);
+    static private RayVector[] buildObjects() {
+        final Vector<RayVector> tmp = new Vector<>(art.length * art[0].length);
 
         final int nr = art.length;
         final int nc = art[0].length;
         for (int k = nc - 1; k >= 0; k--) {
             for (int j = nr - 1; j >= 0; j--) {
                 if (art[j][nc - 1 - k] != ' ') {
-                    tmp.add(new vector(-k, 6.5f, -(nr - 1 - j) - 3.5f));
+                    tmp.add(new RayVector(-k, 6.5f, -(nr - 1 - j) - 3.5f));
                 }
             }
         }
 
-        return tmp.toArray(new vector[0]);
+        return tmp.toArray(new RayVector[0]);
     }
 
     static int size = 512;
@@ -61,7 +49,7 @@ public final class Raycaster {
     static float aspectRatio;
 
     public static void main(final String[] args) throws Exception {
-        final vector[] objects = buildObjects();
+        final RayVector[] objects = buildObjects();
         int num_threads = Runtime.getRuntime().availableProcessors();
 
         float megaPixel = 1;
