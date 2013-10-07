@@ -89,7 +89,7 @@ final class Worker implements Runnable  {
 
     // (S)ample the world and return the pixel color for
     // a ray passing by point o (Origin) and d (Direction)
-    private final vector S(final vector o, final vector d) {
+    private final vector sample(final vector o, final vector d) {
         // Search for an intersection ray Vs World.
         final int m = T(o, d);
         final vector on = new vector(n);
@@ -136,7 +136,7 @@ final class Worker implements Runnable  {
 
         // m == 2 A sphere was hit. Cast an ray bouncing from the sphere surface.
         // Attenuate color by 50% since it is bouncing (*.5)
-        return new vector(p, p, p).add(S(h, r).scale(.5f));
+        return new vector(p, p, p).add(sample(h, r).scale(.5f));
     }
 
     @Override
@@ -173,7 +173,7 @@ final class Worker implements Runnable  {
             final vector tmpC = tmpA.add(tmpB).add(Raycaster.c);
             final vector rayDirection = t.scale(-1).add(tmpC.scale(16.f)).norm();
 
-            p = S(CAM_FOCAL_VEC.add(t), rayDirection).scale(3.5f).add(p); // +p for color accumulation
+            p = sample(CAM_FOCAL_VEC.add(t), rayDirection).scale(3.5f).add(p); // +p for color accumulation
         }
         return p;
     }
