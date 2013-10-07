@@ -95,7 +95,7 @@ function make_objects()
     for k in (nc-1):-1:0
         for j in (nr-1):-1:0
             if art[j+1][nc-k] != ' '
-                push!(objs, Vec{Float64}(-float(k), 6.5, -(nr - 1.0 - j) - 3.5))
+                push!(objs, Vec{Float64}(-float(k), 3.0, -(nr - 1.0 - j) - 4.0))
             end
         end
     end
