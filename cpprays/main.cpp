@@ -205,8 +205,8 @@ int main(int argc, char **argv) {
   auto& outlog = std::cerr;
 
   const Art art {
-    " 1111            1    ",
-    " 1   11         1 1   ",
+    " 11111           1    ",
+    " 1    1         1 1   ",
     " 1     1       1   1  ",
     " 1     1      1     1 ",
     " 1    11     1       1",
