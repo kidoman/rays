@@ -24,10 +24,10 @@ final class Worker implements Runnable  {
     private static final vector FLOOR_PATTERN_1 = new vector( 3.f,  1.f,  1.f);
     private static final vector FLOOR_PATTERN_2 = new vector( 3.f,  3.f,  3.f);
 
-    // for stochastic sampling
     private final int offset;
     private final int jump;
 
+    // for stochastic sampling
     private final ThreadLocalRandom rnd = ThreadLocalRandom.current();
 
     private final vector[] objects;
@@ -41,14 +41,14 @@ final class Worker implements Runnable  {
         jump = _jump;
     }
 
-    //The intersection test for line [o,v].
+    //The intersection test for line [orig, v].
     // Return 2 if a hit was found (and also return distance t and bouncing ray n).
     // Return 0 if no hit was found but ray goes upward
     // Return 1 if no hit was found but ray goes downward
-    private final int T(vector o, final vector d) {
+    private final int tracer(vector orig, final vector dir) {
         t = 1e9f;
         int m = 0;
-        final float p = -o.z / d.z;
+        final float p = -orig.z / dir.z;
 
         n = EMPTY_VEC;
         if (.01f < p) {
@@ -57,12 +57,12 @@ final class Worker implements Runnable  {
             m = 1;
         }
 
-        o = o.add(T_CONST_VEC);
+        orig = orig.add(T_CONST_VEC);
         vector last = null;
         for(int i = 0; i < objects.length; i++) {
             // There is a sphere but does the ray hits it ?
-            final vector p1 = o.add(objects[i]);
-            final float b = p1.dot(d);
+            final vector p1 = orig.add(objects[i]);
+            final float b = p1.dot(dir);
             final float c = p1.dot(p1) - 1;
             final float b2 = b * b;
 
@@ -81,27 +81,27 @@ final class Worker implements Runnable  {
         }
 
         if(last != null) {
-            n = (last.add(d.scale(t))).norm();
+            n = (last.add(dir.scale(t))).norm();
         }
 
         return m;
     }
 
-    // (S)ample the world and return the pixel color for
-    // a ray passing by point o (Origin) and d (Direction)
-    private final vector sample(final vector o, final vector d) {
+    // Sample the world and return the pixel color for
+    // a ray passing by point origin and dir (Direction)
+    private final vector sample(final vector origin, final vector dir) {
         // Search for an intersection ray Vs World.
-        final int m = T(o, d);
+        final int m = tracer(origin, dir);
         final vector on = new vector(n);
 
         if (m == 0) { // m==0
             // No sphere found and the ray goes upward: Generate a sky color
-            final float p = 1 - d.z;
+            final float p = 1 - dir.z;
             return SKY_VEC.scale(p);
         }
 
         // A sphere was maybe hit.
-        vector h = o.add(d.scale(t)); // h = intersection coordinate
+        vector h = origin.add(dir.scale(t)); // h = intersection coordinate
 
         // 'l' = direction to light (with random delta for soft-shadows).
         final vector l = new vector(9.f + rnd.nextFloat(),
@@ -112,7 +112,7 @@ final class Worker implements Runnable  {
         float b = l.dot(n);
 
         // Calculate illumination factor (lambertian coefficient > 0 or in shadow)?
-        if (b < 0 || T(h, l) != 0) {
+        if (b < 0 || tracer(h, l) != 0) {
             b = 0;
         }
 
@@ -122,7 +122,7 @@ final class Worker implements Runnable  {
             return (cond ? FLOOR_PATTERN_1 : FLOOR_PATTERN_2).scale(b * .2f + .1f);
         }
 
-        final vector r = d.add(on.scale(on.dot(d.scale(-2.f)))); // r = The half-vector
+        final vector r = dir.add(on.scale(on.dot(dir.scale(-2.f)))); // r = The half-vector
 
         // Calculate the color 'p' with diffuse and specular component
         float p = l.dot(r.scale(b > 0 ? 1.f : 0.f));
