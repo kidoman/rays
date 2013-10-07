@@ -55,17 +55,8 @@ public final class Raycaster {
         return tmp.toArray(new vector[0]);
     }
 
-    private static final vector STD_VEC = new vector(0, 0, 1);
-
     static int size = 512;
     static byte[] bytes;
-
-    // The '!' are for normalizing each vectors with ! operator.
-    static final vector g = (new vector(-3.1f, -16.f, 3.2f)).norm(); // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
-
-    static final vector a = (STD_VEC.cross(g)).norm().scale(.002f);
-    static final vector b = (g.cross(a)).norm().scale(.002f);
-    static final vector c = (a.add(b)).scale(-256).add(g);
 
     static float aspectRatio;
 

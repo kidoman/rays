@@ -1,8 +1,6 @@
 package javarays;
 
-import static javarays.Raycaster.a;
 import static javarays.Raycaster.aspectRatio;
-import static javarays.Raycaster.b;
 import static javarays.Raycaster.bytes;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -16,13 +14,19 @@ final class Worker implements Runnable  {
 
     private static final vector EMPTY_VEC = new vector();
     private static final vector SKY_VEC   = new vector(1.f,  1.f,  1.f);
-    private static final vector STD_VEC   = new vector(0.f,  0.f,  1.f);
 
     // Ray Origin
     private static final vector CAM_FOCAL_VEC   = new vector(16.f, 16.f,  8.f);
     private static final vector T_CONST_VEC     = new vector( 0.f,  3.f, -4.f);
     private static final vector FLOOR_PATTERN_1 = new vector( 3.f,  1.f,  1.f);
     private static final vector FLOOR_PATTERN_2 = new vector( 3.f,  3.f,  3.f);
+
+    private static final vector STD_VEC   = new vector(0.f,  0.f,  1.f);
+    private static final vector g = (new vector(-3.1f, -16.f, 3.2f)).norm(); // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
+
+    private static final vector a = (STD_VEC.cross(g)).norm().scale(.002f);
+    private static final vector b = (g.cross(a)).norm().scale(.002f);
+    private static final vector c = (a.add(b)).scale(-256).add(g);
 
     private final int offset;
     private final int jump;
@@ -170,7 +174,7 @@ final class Worker implements Runnable  {
             // Ray Direction with random deltas
             final vector tmpA = a.scale(rnd.nextFloat() + x * aspectRatio);
             final vector tmpB = b.scale(rnd.nextFloat() + y * aspectRatio);
-            final vector tmpC = tmpA.add(tmpB).add(Raycaster.c);
+            final vector tmpC = tmpA.add(tmpB).add(c);
             final vector rayDirection = t.scale(-1).add(tmpC.scale(16.f)).norm();
 
             p = sample(CAM_FOCAL_VEC.add(t), rayDirection).scale(3.5f).add(p); // +p for color accumulation
