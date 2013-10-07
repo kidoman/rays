@@ -18,8 +18,8 @@ public final class Raycaster {
     };
 
     private final static char[][] art = {
-        " 1111            1     ".toCharArray(),
-        " 1   11         1 1    ".toCharArray(),
+        " 11111           1     ".toCharArray(),
+        " 1    1         1 1    ".toCharArray(),
         " 1     1       1   1   ".toCharArray(),
         " 1     1      1     1  ".toCharArray(),
         " 1    11     1       1 ".toCharArray(),

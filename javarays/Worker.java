@@ -14,7 +14,7 @@ final class Worker implements Runnable  {
     private static final vector STD_VEC     = new vector(0.f,  0.f,  1.f);
 
     // Ray Origin
-    private static final vector CAM_FOCAL_VEC   = new vector(17.f, 16.f,  8.f);
+    private static final vector CAM_FOCAL_VEC   = new vector(16.f, 16.f,  8.f);
     private static final vector T_CONST_VEC     = new vector( 0.f,  3.f, -4.f);
     private static final vector FLOOR_PATTERN_1 = new vector( 3.f,  1.f,  1.f);
     private static final vector FLOOR_PATTERN_2 = new vector( 3.f,  3.f,  3.f);
