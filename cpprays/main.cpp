@@ -93,17 +93,22 @@ Objects objects;
 typedef std::vector<std::string> Art;
 
 Objects makeObjects(const Art& art) {
+  const float ox = 1.0f;
+  const float oy = 6.5f;
+  const float oz = -2.5f;
+
   Objects o;
-  auto y = 1.0f - static_cast<float>(art.size());
+  const float y = oy;
+  auto z = oz - static_cast<float>(art.size());
   for(const auto& line : art) {
-    auto x = 1.0f - static_cast<float>(line.size());
+    auto x = ox - static_cast<float>(line.size());
     for(const auto& c : line) {
       if(' ' != c) {
-        o.emplace_back(x, 3.0f, y - 4.0f);
+        o.emplace_back(x, y, z);
       }
       x += 1.0f;
     }
-    y += 1.0f;
+    z += 1.0f;
   }
   return o;
 }
@@ -244,16 +249,26 @@ int main(int argc, char **argv) {
     return x;
   }();
 
-  const auto imageSize = static_cast<int>(sqrt(megaPixels * 1000 * 1000));
-
   const auto overallDurationBegin = Clock::now();
 
-  const vector g=!vector(-6.75f, -16.f, 1.f),
-    a=!(vector(0,0,1)^g) * .002f,
-    b=!(g^a)*.002f,
-    c=(a+b)*-256.0f+g;
+  const auto imageSize = static_cast<int>(sqrt(megaPixels * 1000 * 1000));
+  std::vector<unsigned char> bytes(3 * imageSize * imageSize);
+  const auto clamp = [](float v) -> unsigned char {
+    if(v < 0.0f) {
+      return 0;
+    } else if(v > 255.0f) {
+      return 255;
+    } else {
+      return static_cast<unsigned char>(static_cast<int>(v));
+    }
+  };
 
-  std::vector<char> bytes(3 * imageSize * imageSize);
+  const auto g = !vector(-3.1f, -16.f, 3.2f);
+  const auto a = !(vector(0.0f, 0.0f, 1.0f)^g) * .002f;
+  const auto b = !(g^a)*.002f;
+  const auto c = (a+b)*-256.0f+g;
+  const auto ar = 512.0f / static_cast<float>(imageSize);
+  const auto orig0 = vector(16.0f, 16.0f, 8.0f);
 
   auto lambda=[&](unsigned int seed, int offset, int jump) {
     for (int y=offset; y<imageSize; y+=jump) {    //For each row
@@ -263,16 +278,23 @@ int main(int argc, char **argv) {
         vector p(13.0f,13.0f,13.0f);
 
         for(int r=64;r--;) {
-          const vector t=a*(rnd(seed)-.5f)*99.0f+b*(rnd(seed)-.5f)*99.0f;
+          const auto t = a*((rnd(seed)-.5f)*99.0f) + b*((rnd(seed)-.5f)*99.0f);
 
-          p=sampler(objects, vector(17.0f,16.0f,8.0f)+t,
-            !(t*-1.0f+(a*(rnd(seed)+x)+b*(y+rnd(seed))+c)*16.0f),
-            seed)*3.5f+p;
+          const auto orig = orig0 + t;
+          const auto js = 16.0f;
+          const auto jt = -1.0f;
+          const auto ja = js * (static_cast<float>(x) * ar + rnd(seed));
+          const auto jb = js * (static_cast<float>(y) * ar + rnd(seed));
+          const auto jc = js;
+          const auto dir = !(t*jt + a*ja + b*jb + c*jc);
+
+          const auto s = sampler(objects, orig, dir, seed);
+          p = s * 3.5f + p;
         }
 
-        bytes[k++] = (char)p.x();
-        bytes[k++] = (char)p.y();
-        bytes[k++] = (char)p.z();
+        bytes[k++] = clamp(p.x());
+        bytes[k++] = clamp(p.y());
+        bytes[k++] = clamp(p.z());
       }
     }
   };
@@ -292,5 +314,5 @@ int main(int argc, char **argv) {
 
   auto& output = std::cout;
   output << "P6 " << imageSize << " " << imageSize << " 255 "; // The PPM Header is issued
-  output.write(bytes.data(), bytes.size());
+  output.write(reinterpret_cast<char*>(bytes.data()), bytes.size());
 }
