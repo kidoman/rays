@@ -1,5 +1,10 @@
 package javarays;
 
+import static javarays.Raycaster.a;
+import static javarays.Raycaster.aspectRatio;
+import static javarays.Raycaster.b;
+import static javarays.Raycaster.bytes;
+
 import java.util.concurrent.ThreadLocalRandom;
 
 import javarays.Raycaster.vector;
@@ -7,11 +12,11 @@ import javarays.Raycaster.vector;
 final class Worker implements Runnable  {
 
     // Default pixel color is almost pitch black
-    private final vector DEFAULT_COLOR   = new vector(13, 13, 13);
+    private final vector DEFAULT_COLOR    = new vector(13, 13, 13);
 
-    private static final vector EMPTY_VEC   = new vector();
-    private static final vector SKY_VEC     = new vector(1.f,  1.f,  1.f);
-    private static final vector STD_VEC     = new vector(0.f,  0.f,  1.f);
+    private static final vector EMPTY_VEC = new vector();
+    private static final vector SKY_VEC   = new vector(1.f,  1.f,  1.f);
+    private static final vector STD_VEC   = new vector(0.f,  0.f,  1.f);
 
     // Ray Origin
     private static final vector CAM_FOCAL_VEC   = new vector(16.f, 16.f,  8.f);
@@ -140,9 +145,9 @@ final class Worker implements Runnable  {
             for (int x = Raycaster.size; x-- > 0 ; ) { // For each pixel in a line
                 // Reuse the vector class to store not XYZ but a RGB pixel color
                 final vector p = innerLoop(y, x, DEFAULT_COLOR);
-                Raycaster.bytes[k++] = (byte) p.x;
-                Raycaster.bytes[k++] = (byte) p.y;
-                Raycaster.bytes[k++] = (byte) p.z;
+                bytes[k++] = (byte) p.x;
+                bytes[k++] = (byte) p.y;
+                bytes[k++] = (byte) p.z;
             }
         }
     }
@@ -155,14 +160,14 @@ final class Worker implements Runnable  {
             // Depth of View blur).
             final float factor1 = (ThreadLocalRandom.current().nextFloat()-.5f) * 99.f;
             final float factor2 = (ThreadLocalRandom.current().nextFloat()-.5f) * 99.f;
-            final vector t = Raycaster.a.scale(factor1).add(Raycaster.b.scale(factor2)); // A little bit of delta up/down and left/right
+            final vector t = a.scale(factor1).add(b.scale(factor2)); // A little bit of delta up/down and left/right
 
             // Set the camera focal point vector(17,16,8) and Cast the ray
             // Accumulate the color returned in the p variable
 
             // Ray Direction with random deltas
-            final vector tmpA = Raycaster.a.scale(ThreadLocalRandom.current().nextFloat() + x * Raycaster.aspectRatio);
-            final vector tmpB = Raycaster.b.scale(ThreadLocalRandom.current().nextFloat() + y * Raycaster.aspectRatio);
+            final vector tmpA = a.scale(ThreadLocalRandom.current().nextFloat() + x * aspectRatio);
+            final vector tmpB = b.scale(ThreadLocalRandom.current().nextFloat() + y * aspectRatio);
             final vector tmpC = tmpA.add(tmpB).add(Raycaster.c);
             final vector rayDirection = t.scale(-1).add(tmpC.scale(16.f)).norm();
 
