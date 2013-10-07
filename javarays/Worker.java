@@ -74,7 +74,7 @@ final class Worker implements Runnable  {
         }
 
         if(last != null) {
-            n = (last.add(d.mul(t))).norm();
+            n = (last.add(d.scale(t))).norm();
         }
 
         return m;
@@ -90,16 +90,16 @@ final class Worker implements Runnable  {
         if (m == 0) { // m==0
             // No sphere found and the ray goes upward: Generate a sky color
             final float p = 1 - d.z;
-            return SKY_VEC.mul(p);
+            return SKY_VEC.scale(p);
         }
 
         // A sphere was maybe hit.
-        vector h = o.add(d.mul(t)); // h = intersection coordinate
+        vector h = o.add(d.scale(t)); // h = intersection coordinate
         final float _x = 9.f + ThreadLocalRandom.current().nextFloat();
         final float _y = 9.f + ThreadLocalRandom.current().nextFloat();
 
         // 'l' = direction to light (with random delta for soft-shadows).
-        final vector l = new vector(_x, _y, 16.f).add(h.mul(-1.f)).norm();
+        final vector l = new vector(_x, _y, 16.f).add(h.scale(-1.f)).norm();
 
         // Calculated the lambertian factor
         float b = l.dot(n);
@@ -110,15 +110,15 @@ final class Worker implements Runnable  {
         }
 
         if (m == 1) { // m == 1
-            h = h.mul(.2f); // No sphere was hit and the ray was going downward: Generate a floor color
+            h = h.scale(.2f); // No sphere was hit and the ray was going downward: Generate a floor color
             final boolean cond = ((int) (Math.ceil(h.x) + Math.ceil(h.y)) & 1) == 1;
-            return (cond ? FLOOR_PATTERN_1 : FLOOR_PATTERN_2).mul(b * .2f + .1f);
+            return (cond ? FLOOR_PATTERN_1 : FLOOR_PATTERN_2).scale(b * .2f + .1f);
         }
 
-        final vector r = d.add(on.mul(on.dot(d.mul(-2.f)))); // r = The half-vector
+        final vector r = d.add(on.scale(on.dot(d.scale(-2.f)))); // r = The half-vector
 
         // Calculate the color 'p' with diffuse and specular component
-        float p = l.dot(r.mul(b > 0 ? 1.f : 0.f));
+        float p = l.dot(r.scale(b > 0 ? 1.f : 0.f));
         float p33 = p * p;
         p33 = p33 * p33;
         p33 = p33 * p33;
@@ -129,7 +129,7 @@ final class Worker implements Runnable  {
 
         // m == 2 A sphere was hit. Cast an ray bouncing from the sphere surface.
         // Attenuate color by 50% since it is bouncing (*.5)
-        return new vector(p, p, p).add(S(h, r).mul(.5f));
+        return new vector(p, p, p).add(S(h, r).scale(.5f));
     }
 
     @Override
@@ -155,18 +155,18 @@ final class Worker implements Runnable  {
             // Depth of View blur).
             final float factor1 = (ThreadLocalRandom.current().nextFloat()-.5f) * 99.f;
             final float factor2 = (ThreadLocalRandom.current().nextFloat()-.5f) * 99.f;
-            final vector t = Raycaster.a.mul(factor1).add(Raycaster.b.mul(factor2)); // A little bit of delta up/down and left/right
+            final vector t = Raycaster.a.scale(factor1).add(Raycaster.b.scale(factor2)); // A little bit of delta up/down and left/right
 
             // Set the camera focal point vector(17,16,8) and Cast the ray
             // Accumulate the color returned in the p variable
 
             // Ray Direction with random deltas
-            final vector tmpA = Raycaster.a.mul(ThreadLocalRandom.current().nextFloat() + x * Raycaster.aspectRatio);
-            final vector tmpB = Raycaster.b.mul(ThreadLocalRandom.current().nextFloat() + y * Raycaster.aspectRatio);
+            final vector tmpA = Raycaster.a.scale(ThreadLocalRandom.current().nextFloat() + x * Raycaster.aspectRatio);
+            final vector tmpB = Raycaster.b.scale(ThreadLocalRandom.current().nextFloat() + y * Raycaster.aspectRatio);
             final vector tmpC = tmpA.add(tmpB).add(Raycaster.c);
-            final vector rayDirection = t.mul(-1).add(tmpC.mul(16.f)).norm();
+            final vector rayDirection = t.scale(-1).add(tmpC.scale(16.f)).norm();
 
-            p = S(CAM_FOCAL_VEC.add(t), rayDirection).mul(3.5f).add(p); // +p for color accumulation
+            p = S(CAM_FOCAL_VEC.add(t), rayDirection).scale(3.5f).add(p); // +p for color accumulation
         }
         return p;
     }

@@ -12,8 +12,8 @@ public final class Raycaster {
         public vector(final float a,final float b,final float c) {x=a;y=b;z=c;}     //Constructor
         public vector add(final vector r) {return new vector(x+r.x,y+r.y,z+r.z);}   //Vector add
         public float  dot(final vector r) {return x*r.x+y*r.y+z*r.z;}               //Vector dot product
-        public vector mul(final float r)  {return new vector(x*r,y*r,z*r);}         //Vector scaling
-        public vector norm() {return mul((float)(1.f/Math.sqrt(dot(this))));}       // Used later for normalizing the vector
+        public vector scale(final float r)  {return new vector(x*r,y*r,z*r);}         //Vector scaling
+        public vector norm() {return scale((float)(1.f/Math.sqrt(dot(this))));}       // Used later for normalizing the vector
         public vector cross(final vector r) {return new vector(y*r.z-z*r.y,z*r.x-x*r.z,x*r.y-y*r.x);} //Cross-product
     };
 
@@ -63,9 +63,9 @@ public final class Raycaster {
     // The '!' are for normalizing each vectors with ! operator.
     static final vector g = (new vector(-3.1f, -16.f, 3.2f)).norm(); // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
 
-    static final vector a = (STD_VEC.cross(g)).norm().mul(.002f);
-    static final vector b = (g.cross(a)).norm().mul(.002f);
-    static final vector c = (a.add(b)).mul(-256).add(g);
+    static final vector a = (STD_VEC.cross(g)).norm().scale(.002f);
+    static final vector b = (g.cross(a)).norm().scale(.002f);
+    static final vector c = (a.add(b)).scale(-256).add(g);
 
     static float aspectRatio;
 
