@@ -5,15 +5,10 @@ immutable Vec{T<:Real}
     x :: T
     y :: T
     z :: T
-
-    function Vec(x::T, y::T, z::T)
-        new(x, y, z)
-    end
-
-    function Vec(v::Vec{T})
-        new(v.x, v.y, v.z)
-    end
 end
+
+# constructor
+Vec(v::Vec) = Vec(v.x, v.y, v.z)
 
 # vector add
 +{T<:Real}(a::Vec{T}, b::Vec{T}) = Vec{T}(a.x + b.x, a.y + b.y, a.z + b.z)
@@ -21,7 +16,6 @@ end
 # vector scaling 
 *{T<:Real}(v::Vec{T}, x::T) = Vec{T}(v.x * x, v.y * x, v.z * x)
 *{T<:Real}(x::T, v::Vec{T}) = v * x
-#*{T<:Real}(a::T, b::Vec{T}) = Vec{T}(a * b.x, a * b.y, a * b.z)
 
 # vector dot product
 Base.dot{T<:Real}(a::Vec{T}, b::Vec{T}) = a.x * b.x + a.y * b.y + a.z * b.z
@@ -41,21 +35,25 @@ immutable RGB{T<:Real}
     b :: T
 end
 
+# implement write function for pixel type (called when writing pixel array to STDOUT)
+Base.write(s::IO, pix::RGB) = begin n = 0
+                                    n += write(pix.r)
+                                    n += write(pix.g)
+                                    n += write(pix.b)
+                                    n
+                              end
 # add rgb pixels
 +{T<:Real}(p1::RGB{T}, p2::RGB{T}) = RGB{T}(p1.r + p2.r, p1.g + p2.g, p1.b + p2.b)
 
 # scale rgb pixels
 *{T<:Real}(p::RGB{T}, x::T) = RGB{T}(p.r * x, p.g * x, p.b * x)
 *{T<:Real}(x::T, p::RGB{T}) = p * x
-#*{T<:Real}(x::T, p::RGB{T}) = RBG{T}(p.r * x, p.g * x, p.b * x) 
 
+# clamp pixel values to prevent integer overflow artifacts
 clamp_rgb8{T<:Real}(v::T) = v < 0 ? uint8(0) : v > 255 ? uint8(255) : uint8(v) 
 clamp_rgb8{T<:Real}(pix::RGB{T}) = RGB{Uint8}(clamp_rgb8(pix.r),
                                               clamp_rgb8(pix.g),
                                               clamp_rgb8(pix.b))
-
-test{T<:Real}(pix::RGB{T}) = RGB{Uint8}(uint8(pix.r), uint8(pix.g), uint8(pix.b))
-
 # -- Objects to Render ---                                              
 
 #const julia_art = ["                     ",
@@ -173,8 +171,7 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     
     # search for an intersection ray vs world 
     st, dist, bounce = intersect_test(orig, dir)
-    
-    obounce = Vec{T}(bounce)
+    obounce = bounce
 
     if st == NOHIT_UP
         # no sphere found and the ray goes upward: generate sky color
@@ -232,7 +229,6 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     return RGB{T}(p, p, p) + sample_world(h, r) * 0.5
 end
 
-
 function main(width::Int64, height::Int64)
     
     @assert width > 64 && height > 64 
@@ -250,9 +246,9 @@ function main(width::Int64, height::Int64)
     # right vector 
     b = unit(cross(g, a)) * 0.002 
     c = ((a + b) * -256.0) + g
- 
-    #bytes = Array(RGB{Uint8}, width * height)
-    bytes = Array(Uint8, width * height * 3)
+    
+    # image array
+    pixels = Array(RGB{Uint8}, width * height)
     
     for y in 0:(height - 1)
         for x in 0:(width - 1)
@@ -262,29 +258,25 @@ function main(width::Int64, height::Int64)
                 # a little bit of delta up/down and left/right
                 t = (a * (rand() - 0.5) * 99.0) + (b * (rand() - 0.5) * 99.0)
                 # set the camera focal point (17,16,8) and cast the ray
-                # accumulate the color returned in pix 
+                # accumulating the color returned in pix 
                 orig = CAMERA_VEC + t
                 dir = ((-1.0 * t) + (a * (rand() + float(x)) + 
                                      b * (rand() + float(y)) + c) * 16.0)
                 dir = unit(dir)
                 pix += (sample_world(orig, unit(dir)) * 3.5)
             end
-            idx = (height - y - 1) * width * 3 + (width - x - 1) * 3
-            #bytes[idx] = test(pix)
-            bytes[idx + 1] = uint8(pix.r) # R
-            bytes[idx + 2] = uint8(pix.g) # G
-            bytes[idx + 3] = uint8(pix.b) # B
+            idx = (height - y - 1) * width + (width - x)
+            pixels[idx] = clamp_rgb8(pix)
         end
     end
-    write(STDOUT, bytes)
+    write(STDOUT, pixels)
 end
 end
 
 nargs = length(ARGS)
-if nargs == 0 Rays.main(768, 768)
+if nargs     == 0 Rays.main(768, 768)
 elseif nargs == 1 Rays.main(int(ARGS[1]), int(ARGS[1]))
 elseif nargs == 2 Rays.main(int(ARGS[1]), int(ARGS[2]))
-# ignore nprocs argument
 elseif nargs == 3 Rays.main(int(ARGS[1]), int(ARGS[2]))
 else println("Error: too many arguments")
 end
