@@ -107,8 +107,8 @@ final class Worker implements Runnable  {
 
         // 'l' = direction to light (with random delta for soft-shadows).
         final RayVector l = new RayVector(9.f + rnd.nextFloat(),
-                                    9.f + rnd.nextFloat(),
-                                    16.f).add(h.scale(-1.f)).norm();
+                                          9.f + rnd.nextFloat(),
+                                          16.f).add(h.scale(-1.f)).norm();
 
         // Calculated the lambertian factor
         float b = l.dot(n);
