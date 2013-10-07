@@ -95,7 +95,7 @@ function make_objects()
     for k in (nc-1):-1:0
         for j in (nr-1):-1:0
             if art[j+1][nc-k] != ' '
-                push!(objs, Vec{Float64}(-float(k), 3.0, -(nr - 1.0 - j) - 4.0))
+                push!(objs, Vec{Float64}(-float(k), 6.5, -(nr - 1.0 - j) - 3.5))
             end
         end
     end
@@ -176,9 +176,8 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     if st == NOHIT_UP
         # no sphere found and the ray goes upward: generate sky color
         p = 1.0 - dir.z
-        # p ^= 4
-        p = p * p 
-        p = p * p 
+        #p = p * p 
+        #p = p * p 
   	return SKY_VEC * p
     end
 
@@ -257,7 +256,7 @@ function main(width::Int64, height::Int64)
             for _ in 1:64
                 # a little bit of delta up/down and left/right
                 t = (a * (rand() - 0.5) * 99.0) + (b * (rand() - 0.5) * 99.0)
-                # set the camera focal point (17,16,8) and cast the ray
+                # set the camera focal point and cast the ray
                 # accumulating the color returned in pix 
                 orig = CAMERA_VEC + t
                 dir = ((-1.0 * t) + (a * (rand() + float(x)) + 
