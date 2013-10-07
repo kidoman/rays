@@ -39,7 +39,7 @@ public final class Raycaster {
         "     1        111111   ".toCharArray()
     };
 
-    static private vector[] F() {
+    static private vector[] buildObjects() {
         final Vector<vector> tmp = new Vector<>(art.length * art[0].length);
 
         final int nr = art.length;
@@ -61,7 +61,7 @@ public final class Raycaster {
     static float aspectRatio;
 
     public static void main(final String[] args) throws Exception {
-        final vector[] objects = F();
+        final vector[] objects = buildObjects();
         int num_threads = Runtime.getRuntime().availableProcessors();
 
         float megaPixel = 1;
