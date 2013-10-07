@@ -1,21 +1,27 @@
 module Rays
 
+#-- Vector Type ---
 immutable Vec{T<:Real}
     x :: T
     y :: T
     z :: T
-end
 
-# constructors
-Vec{T<:Real}() = Vec{T}(convert(T,0), convert(T,0), convert(T,0))
-Vec{T<:Real}(v::Vec{T}) = Vec{T}(v.x, v.y, v.z)
+    function Vec(x::T, y::T, z::T)
+        new(x, y, z)
+    end
+
+    function Vec(v::Vec{T})
+        new(v.x, v.y, v.z)
+    end
+end
 
 # vector add
 +{T<:Real}(a::Vec{T}, b::Vec{T}) = Vec{T}(a.x + b.x, a.y + b.y, a.z + b.z)
 
 # vector scaling 
-*{T<:Real}(a::Vec{T}, b::T) = Vec{T}(a.x * b, a.y * b, a.z * b)
-*{T<:Real}(a::T, b::Vec{T}) = Vec{T}(a * b.x, a * b.y, a * b.z)
+*{T<:Real}(v::Vec{T}, x::T) = Vec{T}(v.x * x, v.y * x, v.z * x)
+*{T<:Real}(x::T, v::Vec{T}) = v * x
+#*{T<:Real}(a::T, b::Vec{T}) = Vec{T}(a * b.x, a * b.y, a * b.z)
 
 # vector dot product
 Base.dot{T<:Real}(a::Vec{T}, b::Vec{T}) = a.x * b.x + a.y * b.y + a.z * b.z
@@ -26,6 +32,31 @@ Base.cross{T<:Real}(a::Vec{T}, b::Vec{T}) = Vec{T}(a.y * b.z - a.z * b.y,
                                                    a.x * b.y - a.y * b.x)
 # unit vector
 unit{T<:Real}(a::Vec{T}) = a * (1.0 / sqrt(dot(a, a)))
+
+
+#-- Pixel Type ---
+immutable RGB{T<:Real}
+    r :: T
+    g :: T
+    b :: T
+end
+
+# add rgb pixels
++{T<:Real}(p1::RGB{T}, p2::RGB{T}) = RGB{T}(p1.r + p2.r, p1.g + p2.g, p1.b + p2.b)
+
+# scale rgb pixels
+*{T<:Real}(p::RGB{T}, x::T) = RGB{T}(p.r * x, p.g * x, p.b * x)
+*{T<:Real}(x::T, p::RGB{T}) = p * x
+#*{T<:Real}(x::T, p::RGB{T}) = RBG{T}(p.r * x, p.g * x, p.b * x) 
+
+clamp_rgb8{T<:Real}(v::T) = v < 0 ? uint8(0) : v > 255 ? uint8(255) : uint8(v) 
+clamp_rgb8{T<:Real}(pix::RGB{T}) = RGB{Uint8}(clamp_rgb8(pix.r),
+                                              clamp_rgb8(pix.g),
+                                              clamp_rgb8(pix.b))
+
+test{T<:Real}(pix::RGB{T}) = RGB{Uint8}(uint8(pix.r), uint8(pix.g), uint8(pix.b))
+
+# -- Objects to Render ---                                              
 
 #const julia_art = ["                     ",
 #                   "   11111    1        ",
@@ -75,28 +106,21 @@ end
 
 const objects = make_objects()
 
+# --- Contants ----
 const HIT        = 2
 const NOHIT_DOWN = 1
 const NOHIT_UP   = 0
 
-const CAMERA_VEC    = Vec{Float64}(17.0, 16.0, 8.0)
-const DEFAULT_COLOR = Vec{Float64}(13.0, 13.0, 13.0)
+const CAMERA_VEC = Vec{Float64}(17.0, 16.0, 8.0)
+const EMPTY_VEC  = Vec{Float64}(0.0, 0.0, 0.0)
+const STD_VEC    = Vec{Float64}(0.0, 0.0, 1.0)
 
-const EMPTY_VEC = Vec{Float64}()
-const SKY_VEC   = Vec{Float64}(1.0, 1.0, 1.0)
-const STD_VEC   = Vec{Float64}(0.0, 0.0, 1.0)
-const FLOOR_PATTERN1  = Vec{Float64}(3.0, 1.0, 1.0)
-const FLOOR_PATTERN2  = Vec{Float64}(3.0, 3.0, 3.0)
+# RGB values are declared as floats to avoid casting in inner loops
+const DEFAULT_COLOR   = RGB{Float64}(13.0, 13.0, 13.0)
+const SKY_VEC         = RGB{Float64}(1.0, 1.0, 1.0)
+const FLOOR_PATTERN1  = RGB{Float64}(3.0, 1.0, 1.0)
+const FLOOR_PATTERN2  = RGB{Float64}(3.0, 3.0, 3.0)
 
-macro inline_dot(expr::Expr)
-    if expr.head == :call && expr.args[1] == :dot
-	quote
-            local va = $(expr.args[2])
-            local vb = $(expr.args[3])
-            (va.x * vb.x) + (va.y * vb.y) + (va.z * vb.z)
-        end 
-    end
-end
 
 # the intersection test for line [o, v]
 # return HIT if a hit was found (and also return distance t and bouncing ray n)
@@ -142,6 +166,7 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     (st, dist, bounce)
 end
 
+
 # sample the world and return the pixel color 
 # for a ray passing by point o and d direction
 function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
@@ -180,6 +205,7 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
         end
     end
     
+    # no object hit, return floor pixel value
     if st == NOHIT_DOWN
         h = h * 0.2
         pattern = isodd(int(ceil(h.x) + ceil(h.y))) ? FLOOR_PATTERN1 : FLOOR_PATTERN2
@@ -203,12 +229,15 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     p = p33 * p33 * p33 
     
     # st == HIT a sphere was hit. cast a ray bouncing from sphere surface
-    return Vec{T}(p, p, p) + sample_world(h, r) * 0.5
+    return RGB{T}(p, p, p) + sample_world(h, r) * 0.5
 end
+
 
 function main(width::Int64, height::Int64)
     
     @assert width > 64 && height > 64 
+    
+    # write PPM header
     const header = bytestring("P6 $width $height 255 ")
     write(STDOUT, header)
 
@@ -222,29 +251,29 @@ function main(width::Int64, height::Int64)
     b = unit(cross(g, a)) * 0.002 
     c = ((a + b) * -256.0) + g
  
-    size = 3 * width * height
-    bytes = Array(Uint8, size)
+    #bytes = Array(RGB{Uint8}, width * height)
+    bytes = Array(Uint8, width * height * 3)
     
     for y in 0:(height - 1)
         for x in 0:(width - 1)
-            p = DEFAULT_COLOR
-            # cast 64 rays per pixel
-            # (for blur (stochastic sampling) and soft shadows)
+            pix = DEFAULT_COLOR
+            # cast 64 rays per pixel (for blur and soft shadows)
             for _ in 1:64
                 # a little bit of delta up/down and left/right
                 t = (a * (rand() - 0.5) * 99.0) + (b * (rand() - 0.5) * 99.0)
                 # set the camera focal point (17,16,8) and cast the ray
-                # accumulate the color returned in the p variable
+                # accumulate the color returned in pix 
                 orig = CAMERA_VEC + t
                 dir = ((-1.0 * t) + (a * (rand() + float(x)) + 
                                      b * (rand() + float(y)) + c) * 16.0)
                 dir = unit(dir)
-                p = (sample_world(orig, unit(dir)) * 3.5) + p
+                pix += (sample_world(orig, unit(dir)) * 3.5)
             end
             idx = (height - y - 1) * width * 3 + (width - x - 1) * 3
-            bytes[idx + 1] = uint8(p.x) # R
-            bytes[idx + 2] = uint8(p.y) # G
-            bytes[idx + 3] = uint8(p.z) # B
+            #bytes[idx] = test(pix)
+            bytes[idx + 1] = uint8(pix.r) # R
+            bytes[idx + 2] = uint8(pix.g) # G
+            bytes[idx + 3] = uint8(pix.b) # B
         end
     end
     write(STDOUT, bytes)
