@@ -4,19 +4,11 @@ immutable Vec{T<:Real}
     x :: T
     y :: T
     z :: T
-
-    function Vec()
-        new(convert(T,0), convert(T,0), convert(T,0))
-    end
-
-    function Vec(x::T, y::T, z::T)
-        new(x, y, z)
-    end 
-    
-    function Vec(v::Vec{T})
-        new(v.x, v.y, v.z)
-    end
 end
+
+# constructors
+Vec{T<:Real}() = Vec{T}(convert(T,0), convert(T,0), convert(T,0))
+Vec{T<:Real}(v::Vec{T}) = Vec{T}(v.x, v.y, v.z)
 
 # vector add
 +{T<:Real}(a::Vec{T}, b::Vec{T}) = Vec{T}(a.x + b.x, a.y + b.y, a.z + b.z)
@@ -221,16 +213,16 @@ function main(width::Int64, height::Int64)
     write(STDOUT, header)
 
     # camera direction
-    const g = unit(Vec{Float64}(-6.75, -16.0, 1.0))
+    g = unit(Vec{Float64}(-6.75, -16.0, 1.0))
     
     # camera up vector
-    const a = unit(cross(STD_VEC, g)) * 0.002
+    a = unit(cross(STD_VEC, g)) * 0.002
     
     # right vector 
-    const b = unit(cross(g, a)) * 0.002 
-    const c = ((a + b) * -256.0) + g
+    b = unit(cross(g, a)) * 0.002 
+    c = ((a + b) * -256.0) + g
  
-    const size = 3 * width * height
+    size = 3 * width * height
     bytes = Array(Uint8, size)
     
     for y in 0:(height - 1)
