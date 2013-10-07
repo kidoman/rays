@@ -73,9 +73,9 @@ public final class Raycaster {
         final vector[] objects = F();
         int num_threads = Runtime.getRuntime().availableProcessors();
 
-        int megaPixel = 1;
+        float megaPixel = 1;
         if(args.length > 0) {
-            megaPixel = Integer.parseInt(args[0]);
+            megaPixel = Float.parseFloat(args[0]);
         }
 
         if(args.length > 1) {
