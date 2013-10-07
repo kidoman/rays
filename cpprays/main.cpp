@@ -230,8 +230,7 @@ int main(int argc, char **argv) {
     return defaultValue;
   };
 
-  const auto w = getIntArg(1, 768);
-  const auto h = w;
+  const auto megaPixels = getIntArg(1, 1);
   const auto iterations = getIntArg(2, 1);
   const auto num_threads = [&]() {
     int x = getIntArg(3, 0);
@@ -245,6 +244,8 @@ int main(int argc, char **argv) {
     return x;
   }();
 
+  const auto imageSize = static_cast<int>(sqrt(megaPixels * 1000 * 1000));
+
   const auto overallDurationBegin = Clock::now();
 
   const vector g=!vector(-6.75f, -16.f, 1.f),
@@ -252,13 +253,13 @@ int main(int argc, char **argv) {
     b=!(g^a)*.002f,
     c=(a+b)*-256.0f+g;
 
-  std::vector<char> bytes(3 * w * h);
+  std::vector<char> bytes(3 * imageSize * imageSize);
 
   auto lambda=[&](unsigned int seed, int offset, int jump) {
-    for (int y=offset; y<h; y+=jump) {    //For each row
-      int k = (h - y - 1) * w * 3;
+    for (int y=offset; y<imageSize; y+=jump) {    //For each row
+      int k = (imageSize - y - 1) * imageSize * 3;
 
-      for(int x=w;x--;) {
+      for(int x=imageSize;x--;) {
         vector p(13.0f,13.0f,13.0f);
 
         for(int r=64;r--;) {
@@ -290,6 +291,6 @@ int main(int argc, char **argv) {
   outlog << "Average time taken " << (overallDuration.count() / iterations) << "s" << std::endl;
 
   auto& output = std::cout;
-  output << "P6 " << w << " " << h << " 255 "; // The PPM Header is issued
+  output << "P6 " << imageSize << " " << imageSize << " 255 "; // The PPM Header is issued
   output.write(bytes.data(), bytes.size());
 }
