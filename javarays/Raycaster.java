@@ -14,7 +14,7 @@ public final class Raycaster {
         public float  dot(final vector r) {return x*r.x+y*r.y+z*r.z;}               //Vector dot product
         public vector mul(final float r)  {return new vector(x*r,y*r,z*r);}         //Vector scaling
         public vector norm() {return mul((float)(1.f/Math.sqrt(dot(this))));}       // Used later for normalizing the vector
-        public vector pow(final vector r) {return new vector(y*r.z-z*r.y,z*r.x-x*r.z,x*r.y-y*r.x);} //Cross-product
+        public vector cross(final vector r) {return new vector(y*r.z-z*r.y,z*r.x-x*r.z,x*r.y-y*r.x);} //Cross-product
     };
 
     private final static char[][] art = {
@@ -47,7 +47,7 @@ public final class Raycaster {
         for (int k = nc - 1; k >= 0; k--) {
             for (int j = nr - 1; j >= 0; j--) {
                 if (art[j][nc - 1 - k] != ' ') {
-                    tmp.add(new vector(-k, 0, -(nr - 1 - j)));
+                    tmp.add(new vector(-k, 6.5f, -(nr - 1 - j) - 3.5f));
                 }
             }
         }
@@ -57,36 +57,38 @@ public final class Raycaster {
 
     private static final vector STD_VEC = new vector(0, 0, 1);
 
-    static int w = 512, h = 512;
+    static int size = 512;
     static byte[] bytes;
 
     // The '!' are for normalizing each vectors with ! operator.
-    static final vector g = (new vector(-6.75f, -16, 1)).norm(); // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
+    static final vector g = (new vector(-3.1f, -16.f, 3.2f)).norm(); // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
 
-    static final vector a = (STD_VEC.pow(g)).norm().mul(.002f);
-    static final vector b = (g.pow(a)).norm().mul(.002f);
+    static final vector a = (STD_VEC.cross(g)).norm().mul(.002f);
+    static final vector b = (g.cross(a)).norm().mul(.002f);
     static final vector c = (a.add(b)).mul(-256).add(g);
+
+    static float aspectRatio;
 
     public static void main(final String[] args) throws Exception {
         final vector[] objects = F();
         int num_threads = Runtime.getRuntime().availableProcessors();
 
+        int megaPixel = 1;
         if(args.length > 0) {
-            w = Integer.parseInt(args[0]);
+            megaPixel = Integer.parseInt(args[0]);
         }
 
         if(args.length > 1) {
-            h = Integer.parseInt(args[1]);
+            num_threads = Integer.parseInt(args[1]);
         }
 
-        if(args.length > 2) {
-            num_threads = Integer.parseInt(args[2]);
-        }
+        size = (int)(Math.sqrt(megaPixel * 1000000));
+        aspectRatio = 512.f / size;
 
         final BufferedOutputStream stream = new BufferedOutputStream(System.out);
-        stream.write("".format("P6 %d %d 255 ", w, h).getBytes());
+        stream.write("".format("P6 %d %d 255 ", size, size).getBytes());
 
-        bytes = new byte[3*w*h];
+        bytes = new byte[3*size*size];
 
         final Vector<Thread> threads = new Vector<>();
         for (int i = 0; i < num_threads; ++i) {
