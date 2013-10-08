@@ -284,6 +284,5 @@ nargs = length(ARGS)
 if nargs     == 0 Rays.main(1.0) 
 elseif nargs == 1 Rays.main(float(ARGS[1]))
 elseif nargs == 2 Rays.main(float(ARGS[1]), int(ARGS[2]))
-elseif nargs == 2 Rays.main(float(ARGS[1]), int(ARGS[2]))
 else println("Error: too many arguments")
 end
