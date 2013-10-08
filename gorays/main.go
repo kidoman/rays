@@ -21,7 +21,7 @@ type art []string
 
 func readArt() art {
 	if *artfile == "ART" {
-		*artfile = path.Join(*raysHome, *artfile)
+		*artfile = path.Join(*home, *artfile)
 	}
 	f, err := os.Open(*artfile)
 	if err != nil {
@@ -110,7 +110,7 @@ var (
 	outputfile = flag.String("o", "render.ppm", "output file to write the rendered image to")
 	resultfile = flag.String("r", "result.json", "result file to write the benchmark data to")
 	artfile    = flag.String("a", "ART", "the art file to use for rendering")
-	raysHome   = flag.String("h", os.Getenv("RAYS_HOME"), "RAYS folder")
+	home       = flag.String("home", os.Getenv("RAYS_HOME"), "RAYS folder")
 )
 
 var objects []vector.Vector
