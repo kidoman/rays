@@ -60,8 +60,19 @@ A program is valid if it outputs a valid PPM image to STDOUT.
   * go 1.2rc1 or later
   * gcc 4.8.1 or later
   * Java 7 or later
+  * Ruby 2.0.0-p247 / JRuby / Rubinius 2.0
   * Julia 0.2-prerelease
   * GIMP for opening the rendered images
+
+## Implemented benchmarks
+
+We currently have implementations from:
+
+  * go
+  * C++ (thanks to Takayuki Matsuoka)
+  * Java (thanks to Tobias Kalbitz)
+  * Ruby (thanks to Michael Macias)
+  * Julia (thanks to Jake Bolewski)
 
 Please refer to individual README files in the specific folders to find out instructions on how to run the specific benchmark.
 
@@ -88,5 +99,6 @@ The following have contributed to the project one way or the other:
   * [Marc Aldorasi](https://github.com/m42a)
   * [Lee Baker](https://github.com/leecbaker)
   * [Michael Macias](https://github.com/zaeleus)
+  * [Jake Bolewski](https://github.com/jakebolewski)
 
 Thanks to everyone for all the help given :)
