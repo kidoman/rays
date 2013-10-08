@@ -1,6 +1,7 @@
 *.svg
 *.ppm
 *.prof
+result*.json
 
 # ignore executables
 *.class

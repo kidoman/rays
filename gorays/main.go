@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/kid0m4n/rays/gorays/vector"
@@ -8,45 +10,42 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"path"
 	"runtime"
 	"runtime/pprof"
-	"strconv"
 	"sync"
 	"time"
 )
 
-var art = []string{
-	" 11111           1    ",
-	" 1    1         1 1   ",
-	" 1     1       1   1  ",
-	" 1     1      1     1 ",
-	" 1    11     1       1",
-	" 11111       111111111",
-	" 1    1      1       1",
-	" 1     1     1       1",
-	" 1      1    1       1",
-	"                      ",
-	"1         1    11111  ",
-	" 1       1    1       ",
-	"  1     1    1        ",
-	"   1   1     1        ",
-	"    1 1       111111  ",
-	"     1              1 ",
-	"     1              1 ",
-	"     1             1  ",
-	"     1        111111  ",
+type art []string
+
+func readArt() art {
+	if *artfile == "ART" {
+		*artfile = path.Join(*raysHome, *artfile)
+	}
+	f, err := os.Open(*artfile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	a := make(art, 0)
+	for scanner.Scan() {
+		a = append(a, scanner.Text())
+	}
+
+	return a
 }
 
-var objects = makeObjects()
-
-func makeObjects() []vector.Vector {
-	nr := len(art)
-	nc := len(art[0])
-	objects := make([]vector.Vector, 0, nr*nc)
-	for k := nc - 1; k >= 0; k-- {
-		for j := nr - 1; j >= 0; j-- {
-			if art[j][nc-1-k] != ' ' {
-				objects = append(objects, vector.Vector{X: -float64(k), Y: 6.5, Z: -float64(nr-1-j) - 3.5})
+func (a art) objects() []vector.Vector {
+	objects := make([]vector.Vector, 0)
+	nr := len(a)
+	for j := 0; j < nr; j++ {
+		nc := len(a[j])
+		for k := 0; k < nc; k++ {
+			if a[j][k] != ' ' {
+				objects = append(objects, vector.Vector{X: float64(k), Y: 6.5, Z: -float64(nr-1-j) - 1.5})
 			}
 		}
 	}
@@ -65,29 +64,60 @@ func rnd(s *uint32) float64 {
 	return float64(*s%95) / float64(95)
 }
 
-var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+type image struct {
+	size int
+	data []byte
+}
 
-var size int
+func newImage(size int) *image {
+	return &image{size: size, data: make([]byte, 3*size*size)}
+}
 
-func getIntOpt(name string, i, def int) int {
-	if flag.NArg() > i {
-		v, err := strconv.Atoi(flag.Arg(i))
-		if err != nil {
-			log.Fatalf("%v has to be a simple interger", name)
-		}
-		return v
+func (i *image) Save() {
+	f, err := os.Create(*outputfile)
+	if err != nil {
+		log.Panic(err)
 	}
-	return def
+	defer f.Close()
+
+	fmt.Fprintf(f, "P6 %v %v 255 ", i.size, i.size)
+	if _, err := f.Write(i.data); err != nil {
+		log.Panic(err)
+	}
 }
 
-func usage() {
-	fmt.Fprintf(os.Stderr, "usage: [-cpuprofile] [mega pixels] [times] [procs]\n")
-	flag.PrintDefaults()
+type result struct {
+	Average float64   `json:"average"`
+	Samples []float64 `json:"samples"`
 }
+
+func (r result) Save() {
+	f, err := os.Create(*resultfile)
+	if err != nil {
+		log.Panic(err)
+	}
+	defer f.Close()
+
+	enc := json.NewEncoder(f)
+	enc.Encode(r)
+}
+
+var (
+	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+	mp         = flag.Float64("mp", 1.0, "megapixels of the rendered image")
+	times      = flag.Int("t", 1, "times to repeat the benchmark")
+	procs      = flag.Int("p", runtime.NumCPU(), "number of render goroutines")
+	outputfile = flag.String("o", "render.ppm", "output file to write the rendered image to")
+	resultfile = flag.String("r", "result.json", "result file to write the benchmark data to")
+	artfile    = flag.String("a", "ART", "the art file to use for rendering")
+	raysHome   = flag.String("h", os.Getenv("RAYS_HOME"), "RAYS folder")
+)
+
+var objects []vector.Vector
+var size int
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU() + 1)
-	flag.Usage = usage
 	flag.Parse()
 
 	if *cpuprofile != "" {
@@ -99,27 +129,25 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	mp := getIntOpt("mp", 0, 1)
-	size = int(math.Sqrt(float64(mp * 1000000)))
-
-	times := getIntOpt("times", 1, 1)
-	log.Printf("Will render %v times", times)
-
-	procs := getIntOpt("procs", 2, runtime.NumCPU())
-	if procs < 1 {
-		log.Fatalf("procs (%v) needs to be >= 1", procs)
+	size = int(math.Sqrt(*mp * 1000000))
+	log.Printf("Will render %v time(s)", *times)
+	if *procs < 1 {
+		log.Fatalf("procs (%v) needs to be >= 1", *procs)
 	}
 
-	var overallDuration time.Duration
+	ar := readArt()
+	objects = ar.objects()
 
-	bytes := make([]byte, 3*size*size)
+	var result result
+	var overallDuration float64
+	img := newImage(size)
 
-	for t := 0; t < times; t++ {
-		log.Printf("Starting render#%v of size %v MP (%vx%v) with %v goroutines", t+1, mp, size, size, procs)
+	for t := 0; t < *times; t++ {
+		log.Printf("Starting render#%v of size %v MP (%vx%v) with %v goroutine(s)", t+1, *mp, size, size, *procs)
 
 		startTime := time.Now()
 
-		g := vector.Vector{X: -3.1, Y: -16, Z: 3.2}.Normalize()
+		g := vector.Vector{X: -3.1, Y: -16, Z: 1.9}.Normalize()
 		a := vector.Vector{X: 0, Y: 0, Z: 1}.CrossProduct(g).Normalize().Scale(0.002)
 		b := g.CrossProduct(a).Normalize().Scale(0.002)
 		c := a.Add(b).Scale(-256).Add(g)
@@ -128,9 +156,9 @@ func main() {
 		rows := make(chan row, size)
 
 		var wg sync.WaitGroup
-		wg.Add(procs)
-		for i := 0; i < procs; i++ {
-			go worker(a, b, c, ar, bytes, rows, &wg)
+		wg.Add(*procs)
+		for i := 0; i < *procs; i++ {
+			go worker(a, b, c, ar, img, rows, &wg)
 		}
 
 		for y := (size - 1); y >= 0; y-- {
@@ -139,30 +167,24 @@ func main() {
 		close(rows)
 		wg.Wait()
 
-		duration := time.Now().Sub(startTime)
+		duration := time.Now().Sub(startTime).Seconds()
+		result.Samples = append(result.Samples, duration)
 		overallDuration += duration
 
 		log.Print("Render complete")
 		log.Printf("Time taken for render %v", duration)
 	}
 
-	log.Printf("Average time taken %v", time.Duration(int64(overallDuration)/int64(times)))
+	result.Average = overallDuration / float64(*times)
+	log.Printf("Average time %v", result.Average)
 
-	f, err := os.Create("render.ppm")
-	if err != nil {
-		log.Panic(err)
-	}
-	defer f.Close()
-
-	fmt.Fprintf(f, "P6 %v %v 255 ", size, size)
-	if _, err := f.Write(bytes); err != nil {
-		log.Panic(err)
-	}
+	result.Save()
+	img.Save()
 }
 
 type row int
 
-func (r row) render(a, b, c vector.Vector, ar float64, bytes []byte, seed *uint32) {
+func (r row) render(a, b, c vector.Vector, ar float64, img *image, seed *uint32) {
 	k := (size - int(r) - 1) * 3 * size
 
 	for x := (size - 1); x >= 0; x-- {
@@ -170,27 +192,27 @@ func (r row) render(a, b, c vector.Vector, ar float64, bytes []byte, seed *uint3
 
 		for i := 0; i < 64; i++ {
 			t := a.Scale(rnd(seed) - 0.5).Scale(99).Add(b.Scale(rnd(seed) - 0.5).Scale(99))
-			orig := vector.Vector{X: 16, Y: 16, Z: 8}.Add(t)
+			orig := vector.Vector{X: -5, Y: 16, Z: 8}.Add(t)
 			dir := t.Scale(-1).Add(a.Scale(rnd(seed) + float64(x)*ar).Add(b.Scale(rnd(seed) + float64(r)*ar)).Add(c).Scale(16)).Normalize()
 			p = sampler(orig, dir, seed).Scale(3.5).Add(p)
 		}
 
-		bytes[k] = byte(p.X)
-		bytes[k+1] = byte(p.Y)
-		bytes[k+2] = byte(p.Z)
+		img.data[k] = byte(p.X)
+		img.data[k+1] = byte(p.Y)
+		img.data[k+2] = byte(p.Z)
 
 		k += 3
 	}
 }
 
-func worker(a, b, c vector.Vector, ar float64, bytes []byte, rows <-chan row, wg *sync.WaitGroup) {
+func worker(a, b, c vector.Vector, ar float64, img *image, rows <-chan row, wg *sync.WaitGroup) {
 	runtime.LockOSThread()
 	defer wg.Done()
 
 	seed := rand.Uint32()
 
 	for r := range rows {
-		r.render(a, b, c, ar, bytes, &seed)
+		r.render(a, b, c, ar, img, &seed)
 	}
 }
 
