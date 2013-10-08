@@ -66,25 +66,25 @@ clamp_rgb8{T<:Real}(pix::RGB{T}) = RGB{Uint8}(clamp_rgb8(pix.r),
 #                   "  1111 1111 1 1 111 1"]
 
 const rays_art = [
-" 1111            1     ",
-" 1   11         1 1    ",
-" 1     1       1   1   ",
-" 1     1      1     1  ",
-" 1    11     1       1 ",
-" 11111       111111111 ",
-" 1    1      1       1 ",
-" 1     1     1       1 ",
-" 1      1    1       1 ",
-"                       ",
-"1         1    11111   ",
-" 1       1    1        ",
-"  1     1    1         ",
-"   1   1     1         ",
-"    1 1       111111   ",
-"     1              1  ",
-"     1              1  ",
-"     1             1   ",
-"     1        111111   "]
+" 1111            1    ",
+" 1   11         1 1   ",
+" 1     1       1   1  ",
+" 1     1      1     1 ",
+" 1    11     1       1",
+" 11111       111111111",
+" 1    1      1       1",
+" 1     1     1       1",
+" 1      1    1       1",
+"                      ",
+"1         1    11111  ",
+" 1       1    1       ",
+"  1     1    1        ",
+"   1   1     1        ",
+"    1 1       111111  ",
+"     1              1 ",
+"     1              1 ",
+"     1             1  ",
+"     1        111111  "]
 
 const art = rays_art
 
@@ -109,9 +109,9 @@ const HIT        = 2
 const NOHIT_DOWN = 1
 const NOHIT_UP   = 0
 
-const CAMERA_VEC = Vec{Float64}(16.0, 16.0, 8.0)
-const EMPTY_VEC  = Vec{Float64}(0.0, 0.0, 0.0)
-const STD_VEC    = Vec{Float64}(0.0, 0.0, 1.0)
+const CAMERA_VEC  = Vec{Float64}(16.0, 16.0, 8.0)
+const EMPTY_VEC   = Vec{Float64}(0.0, 0.0, 0.0)
+const STD_VEC     = Vec{Float64}(0.0, 0.0, 1.0)
 
 # RGB values are declared as floats to avoid casting in inner loops
 const DEFAULT_COLOR   = RGB{Float64}(13.0, 13.0, 13.0)
@@ -137,7 +137,7 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
         bounce = STD_VEC
         st = NOHIT_DOWN
     end 
-
+    
     # search for possible object hit
     for obj = objects
         p1 = orig + obj
@@ -253,7 +253,7 @@ function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
                 # accumulating the color returned in pix 
                 orig = CAMERA_VEC + t
                 dir = ((-1.0 * t) + (cam_up * (rand() + ar * float(x)) + 
-                                     cam_right * (rand() +  ar * float(y)) + c) * 16.0)
+                                     cam_right * (rand() + ar * float(y)) + c) * 16.0)
                 dir = unit(dir)
                 pix += (sample_world(orig, unit(dir)) * 3.5)
             end
