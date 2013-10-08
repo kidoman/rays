@@ -5,6 +5,7 @@
 #include <thread>
 #include <vector>
 #include <string>
+#include <fstream>
 #include <iostream>
 #include <chrono>
 
@@ -312,7 +313,7 @@ int main(int argc, char **argv) {
   const auto overallDuration = static_cast<ClockSec>(overallDurationEnd - overallDurationBegin);
   outlog << "Average time taken " << (overallDuration.count() / iterations) << "s" << std::endl;
 
-  auto& output = std::cout;
+  std::ofstream output("render.ppm");
   output << "P6 " << imageSize << " " << imageSize << " 255 "; // The PPM Header is issued
   output.write(reinterpret_cast<char*>(bytes.data()), bytes.size());
 }
