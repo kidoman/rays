@@ -95,7 +95,7 @@ function make_objects()
     for k in (nc-1):-1:0
         for j in (nr-1):-1:0
             if art[j+1][nc-k] != ' '
-                push!(objs, Vec{Float64}(-float(k), 3.0, -(nr - 1.0 - j) - 4.0))
+                push!(objs, Vec{Float64}(-float(k), 6.5, -(nr - 1.0 - j) - 3.5))
             end
         end
     end
@@ -109,7 +109,7 @@ const HIT        = 2
 const NOHIT_DOWN = 1
 const NOHIT_UP   = 0
 
-const CAMERA_VEC = Vec{Float64}(17.0, 16.0, 8.0)
+const CAMERA_VEC = Vec{Float64}(16.0, 16.0, 8.0)
 const EMPTY_VEC  = Vec{Float64}(0.0, 0.0, 0.0)
 const STD_VEC    = Vec{Float64}(0.0, 0.0, 1.0)
 
@@ -176,8 +176,6 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     if st == NOHIT_UP
         # no sphere found and the ray goes upward: generate sky color
         p = 1.0 - dir.z
-        #p = p * p 
-        #p = p * p 
   	return SKY_VEC * p
     end
 
@@ -229,54 +227,63 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
 end
 
 
-function main(width::Int64, height::Int64)
+function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
     
-    @assert width > 64 && height > 64 
-    
-    # write PPM header
-    const header = bytestring("P6 $width $height 255 ")
-    write(STDOUT, header)
-
     # camera direction
-    g = unit(Vec{Float64}(-6.75, -16.0, 1.0))
-    
+    cam_dir = unit(Vec{Float64}(-3.1, -16.0, 3.2))
+        
     # camera up vector
-    a = unit(cross(STD_VEC, g)) * 0.002
-    
+    cam_up = unit(cross(STD_VEC, cam_dir)) * 0.002
+        
     # right vector 
-    b = unit(cross(g, a)) * 0.002 
-    c = ((a + b) * -256.0) + g
+    cam_right = unit(cross(cam_dir, cam_up)) * 0.002 
+    c = ((cam_up + cam_right) * -256.0) + cam_dir
     
-    # image array
-    pixels = Array(RGB{Uint8}, width * height)
-    
-    for y in 0:(height - 1)
-        for x in 0:(width - 1)
+    # aspect ratio
+    ar = 512.0 / size
+               
+    for y in 0:(size - 1)
+        for x in 0:(size - 1)
             pix = DEFAULT_COLOR
             # cast 64 rays per pixel (for blur and soft shadows)
             for _ in 1:64
                 # a little bit of delta up/down and left/right
-                t = (a * (rand() - 0.5) * 99.0) + (b * (rand() - 0.5) * 99.0)
+                t = (cam_up * (rand() - 0.5) * 99.0) + (cam_right * (rand() - 0.5) * 99.0)
                 # set the camera focal point and cast the ray
                 # accumulating the color returned in pix 
                 orig = CAMERA_VEC + t
-                dir = ((-1.0 * t) + (a * (rand() + float(x)) + 
-                                     b * (rand() + float(y)) + c) * 16.0)
+                dir = ((-1.0 * t) + (cam_up * (rand() + ar * float(x)) + 
+                                     cam_right * (rand() +  ar * float(y)) + c) * 16.0)
                 dir = unit(dir)
                 pix += (sample_world(orig, unit(dir)) * 3.5)
             end
-            idx = (height - y - 1) * width + (width - x)
+            idx = (size - y - 1) * size + (size - x)
             pixels[idx] = clamp_rgb8(pix)
         end
+    end
+end
+
+
+function main(megapixels::FloatingPoint, times::Integer)
+    @assert megapixels > 0
+    size = int(sqrt(megapixels * 1e6))
+    
+    # write PPM header
+    header = bytestring("P6 $size $size 255 ")
+    write(STDOUT, header)
+    
+    pixels = Array(RGB{Uint8}, size^2)
+    for _ in 1:times
+        render!(pixels, size)
     end
     write(STDOUT, pixels)
 end
 end
 
 nargs = length(ARGS)
-if nargs     == 0 Rays.main(768, 768)
-elseif nargs == 1 Rays.main(int(ARGS[1]), int(ARGS[1]))
-elseif nargs == 2 Rays.main(int(ARGS[1]), int(ARGS[2]))
-elseif nargs == 3 Rays.main(int(ARGS[1]), int(ARGS[2]))
+if nargs     == 0 Rays.main(1.0) 
+elseif nargs == 1 Rays.main(float(ARGS[1]))
+elseif nargs == 2 Rays.main(float(ARGS[1]), int(ARGS[2]))
+elseif nargs == 2 Rays.main(float(ARGS[1]), int(ARGS[2]))
 else println("Error: too many arguments")
 end
