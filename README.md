@@ -46,6 +46,10 @@ Also, optimizations to the existing implementation are obviously welcome. I will
 
 # How to use
 
+## RAYS_HOME
+
+Set **RAYS_HOME** environment variable to the top level `rays` folder before running any of the benchmarks
+
 ## Benchmark Run
 
 The benchmark is to render a 768x768 image with the text:
