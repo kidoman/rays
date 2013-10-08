@@ -37,9 +37,9 @@ end
 
 # implement write function for pixel type (called when writing pixel array to STDOUT)
 Base.write(s::IO, pix::RGB) = begin n = 0
-                                    n += write(pix.r)
-                                    n += write(pix.g)
-                                    n += write(pix.b)
+                                    n += write(s, pix.r)
+                                    n += write(s, pix.g)
+                                    n += write(s, pix.b)
                                     n
                               end
 # add rgb pixels
@@ -227,6 +227,7 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     # st == HIT a sphere was hit. cast a ray bouncing from sphere surface
     return RGB{T}(p, p, p) + sample_world(h, r) * 0.5
 end
+
 
 function main(width::Int64, height::Int64)
     
