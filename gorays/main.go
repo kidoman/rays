@@ -145,6 +145,8 @@ func main() {
 	for t := 0; t < *times; t++ {
 		log.Printf("Starting render#%v of size %v MP (%vx%v) with %v goroutine(s)", t+1, *mp, size, size, *procs)
 
+		var beforeMemstats runtime.MemStats
+		runtime.ReadMemStats(&beforeMemstats)
 		startTime := time.Now()
 
 		g := vector.Vector{X: -3.1, Y: -16, Z: 1.9}.Normalize()
@@ -167,12 +169,18 @@ func main() {
 		close(rows)
 		wg.Wait()
 
-		duration := time.Now().Sub(startTime).Seconds()
+		stopTime := time.Now()
+		var afterMemstats runtime.MemStats
+		runtime.ReadMemStats(&afterMemstats)
+
+		duration := stopTime.Sub(startTime).Seconds()
 		result.Samples = append(result.Samples, duration)
 		overallDuration += duration
 
-		log.Print("Render complete")
+		log.Printf("Render complete, mallocs %v, total alloc %v bytes", afterMemstats.Mallocs-beforeMemstats.Mallocs, afterMemstats.TotalAlloc-beforeMemstats.TotalAlloc)
 		log.Printf("Time taken for render %v", duration)
+
+		runtime.GC()
 	}
 
 	result.Average = overallDuration / float64(*times)
