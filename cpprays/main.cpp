@@ -255,9 +255,7 @@ int main(int argc, char **argv) {
   const auto imageSize = static_cast<int>(sqrt(megaPixels * 1000 * 1000));
   std::vector<unsigned char> bytes(3 * imageSize * imageSize);
   const auto clamp = [](float v) -> unsigned char {
-    if(v < 0.0f) {
-      return 0;
-    } else if(v > 255.0f) {
+    if(v > 255.0f) {
       return 255;
     } else {
       return static_cast<unsigned char>(static_cast<int>(v));
