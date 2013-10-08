@@ -1,11 +1,13 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <math.h>
 #include <cstring>
 #include <random>
 #include <thread>
 #include <vector>
 #include <string>
+#include <fstream>
+#include <iostream>
+#include <chrono>
 
 #if defined(RAYS_CPP_SSE)
 #include <smmintrin.h>
@@ -83,6 +85,8 @@ private:
 
 #endif
 
+typedef std::chrono::high_resolution_clock Clock;
+typedef std::chrono::duration<double> ClockSec;
 typedef std::vector<vector> Objects;
 
 Objects objects;
@@ -90,84 +94,101 @@ Objects objects;
 typedef std::vector<std::string> Art;
 
 Objects makeObjects(const Art& art) {
+  const float ox = 1.0f;
+  const float oy = 6.5f;
+  const float oz = -2.5f;
+
   Objects o;
-  auto y = 1.0f - static_cast<float>(art.size());
+  const float y = oy;
+  auto z = oz - static_cast<float>(art.size());
   for(const auto& line : art) {
-    auto x = 1.0f - static_cast<float>(line.size());
+    auto x = ox - static_cast<float>(line.size());
     for(const auto& c : line) {
       if(' ' != c) {
-        o.emplace_back(x, 3, y - 4);
+        o.emplace_back(x, y, z);
       }
       x += 1.0f;
     }
-    y += 1.0f;
+    z += 1.0f;
   }
   return o;
 }
 
-float R(unsigned int& seed) {
+float rnd(unsigned int& seed) {
   seed += seed;
   seed ^= 1;
   if ((int)seed < 0)
     seed ^= 0x88888eef;
-  return (float)(seed % 95) / (float)95;
+  return static_cast<float>(seed % 95) * (1.0f / 95.0f);
 }
 
-int T(vector o,vector d,float& t,vector& n) {
-  t=1e9;
-  int m=0;
+enum class Status {
+  kMissUpward,
+  kMissDownward,
+  kHit
+};
+
+Status tracer(const Objects& objects, vector o, vector d, float& t, vector& n) {
+  t=1e9f;
+  auto m = Status::kMissUpward;
   const float p=-o.z()/d.z();
 
-  if(.01f<p)
-    t=p,n=vector(0,0,1),m=1;
+  if(.01f < p) {
+    t = p;
+    n = vector(0.0f, 0.0f, 1.0f);
+    m = Status::kMissDownward;
+  }
 
   for (const auto& obj : objects) {
     const vector p = o + obj;
     const float b = p % d,
-      c = p%p-1,
+      c = p%p-1.0f,
       b2 = b * b;
 
     if(b2>c) {
       const float q=b2-c, s=-b-sqrtf(q);
 
-      if(s<t && s>.01f)
-        t=s, n=p, m=2;
+      if(s < t && s > .01f) {
+        t = s;
+        n = p;
+        m = Status::kHit;
+      }
     }
   }
 
-  if (m == 2)
+  if (m == Status::kHit)
     n=!(n+d*t);
 
   return m;
 }
 
-vector S(vector o,vector d, unsigned int& seed) {
+vector sampler(const Objects& objects, vector o,vector d, unsigned int& seed) {
   float t;
   vector n;
 
   //Search for an intersection ray Vs World.
-  const int m=T(o,d,t,n);
+  const auto m = tracer(objects, o, d, t, n);
   const vector on = n;
 
-  if(!m) {
+  if(m == Status::kMissUpward) {
     float p = 1 - d.z();
     return vector(1.f, 1.f, 1.f) * p;
   }
 
   vector h=o+d*t,
-    l=!(vector(9+R(seed),9+R(seed),16)+h*-1);
+    l=!(vector(9.0f+rnd(seed),9.0f+rnd(seed),16.0f)+h*-1);
 
   float b=l%n;
 
-  if(b<0||T(h,l,t,n))
-    b=0;
+  if(b < 0.0f || tracer(objects, h, l, t, n) != Status::kMissUpward)
+    b=0.0f;
 
-  if(m&1) {   //m == 1
+  if(m == Status::kMissDownward) {
     h=h*.2f;
-    return((int)(ceil(h.x())+ceil(h.y()))&1?vector(3,1,1):vector(3,3,3))*(b*.2f+.1f);
+    return((int)(ceil(h.x())+ceil(h.y()))&1?vector(3.0f,1.0f,1.0f):vector(3.0f,3.0f,3.0f))*(b*.2f+.1f);
   }
 
-  const vector r=d+on*(on%d*-2);               // r = The half-vector
+  const vector r=d+on*(on%d*-2.0f);               // r = The half-vector
 
   float p=l%r*(b>0);
   float p33 = p*p;
@@ -178,33 +199,35 @@ vector S(vector o,vector d, unsigned int& seed) {
   p33 = p33*p;
   p = p33*p33*p33;
 
-  return vector(p,p,p)+S(h,r,seed)*.5;
+  return vector(p,p,p)+sampler(objects, h,r,seed)*.5f;
 }
 
 int main(int argc, char **argv) {
+  auto& outlog = std::cerr;
+
   const Art art {
-    " 1111            1     ",
-    " 1   11         1 1    ",
-    " 1     1       1   1   ",
-    " 1     1      1     1  ",
-    " 1    11     1       1 ",
-    " 11111       111111111 ",
-    " 1    1      1       1 ",
-    " 1     1     1       1 ",
-    " 1      1    1       1 ",
-    "                       ",
-    "1         1    11111   ",
-    " 1       1    1        ",
-    "  1     1    1         ",
-    "   1   1     1         ",
-    "    1 1       111111   ",
-    "     1              1  ",
-    "     1              1  ",
-    "     1             1   ",
-    "     1        111111   "
+    " 11111           1    ",
+    " 1    1         1 1   ",
+    " 1     1       1   1  ",
+    " 1     1      1     1 ",
+    " 1    11     1       1",
+    " 11111       111111111",
+    " 1    1      1       1",
+    " 1     1     1       1",
+    " 1      1    1       1",
+    "                      ",
+    "1         1    11111  ",
+    " 1       1    1       ",
+    "  1     1    1        ",
+    "   1   1     1        ",
+    "    1 1       111111  ",
+    "     1              1 ",
+    "     1              1 ",
+    "     1             1  ",
+    "     1        111111  "
   };
 
-  objects = makeObjects(art);
+  const auto objects = makeObjects(art);
 
   const auto getIntArg = [&](int argIndex, int defaultValue) {
     if(argc > argIndex) {
@@ -213,8 +236,8 @@ int main(int argc, char **argv) {
     return defaultValue;
   };
 
-  const auto w = getIntArg(1, 768);
-  const auto h = getIntArg(2, 768);
+  const auto megaPixels = getIntArg(1, 1);
+  const auto iterations = getIntArg(2, 1);
   const auto num_threads = [&]() {
     int x = getIntArg(3, 0);
     if(x <= 0) {
@@ -227,33 +250,52 @@ int main(int argc, char **argv) {
     return x;
   }();
 
-  printf("P6 %d %d 255 ", w, h); // The PPM Header is issued
+  const auto overallDurationBegin = Clock::now();
 
-  const vector g=!vector(-6.75f, -16.f, 1.f),
-    a=!(vector(0,0,1)^g) * .002f,
-    b=!(g^a)*.002f,
-    c=(a+b)*-256+g;
+  const auto imageSize = static_cast<int>(sqrt(megaPixels * 1000 * 1000));
+  std::vector<unsigned char> bytes(3 * imageSize * imageSize);
+  const auto clamp = [](float v) -> unsigned char {
+    if(v < 0.0f) {
+      return 0;
+    } else if(v > 255.0f) {
+      return 255;
+    } else {
+      return static_cast<unsigned char>(static_cast<int>(v));
+    }
+  };
 
-  std::vector<char> bytes(3 * w * h);
+  const auto g = !vector(-3.1f, -16.f, 3.2f);
+  const auto a = !(vector(0.0f, 0.0f, 1.0f)^g) * .002f;
+  const auto b = !(g^a)*.002f;
+  const auto c = (a+b)*-256.0f+g;
+  const auto ar = 512.0f / static_cast<float>(imageSize);
+  const auto orig0 = vector(16.0f, 16.0f, 8.0f);
 
   auto lambda=[&](unsigned int seed, int offset, int jump) {
-    for (int y=offset; y<h; y+=jump) {    //For each row
-      int k = (h - y - 1) * w * 3;
+    for (int y=offset; y<imageSize; y+=jump) {    //For each row
+      int k = (imageSize - y - 1) * imageSize * 3;
 
-      for(int x=w;x--;) {
-        vector p(13,13,13);
+      for(int x=imageSize;x--;) {
+        vector p(13.0f,13.0f,13.0f);
 
         for(int r=64;r--;) {
-          const vector t=a*(R(seed)-.5f)*99+b*(R(seed)-.5f)*99;
+          const auto t = a*((rnd(seed)-.5f)*99.0f) + b*((rnd(seed)-.5f)*99.0f);
 
-          p=S(vector(17,16,8)+t,
-            !(t*-1+(a*(R(seed)+x)+b*(y+R(seed))+c)*16),
-            seed)*3.5f+p;
+          const auto orig = orig0 + t;
+          const auto js = 16.0f;
+          const auto jt = -1.0f;
+          const auto ja = js * (static_cast<float>(x) * ar + rnd(seed));
+          const auto jb = js * (static_cast<float>(y) * ar + rnd(seed));
+          const auto jc = js;
+          const auto dir = !(t*jt + a*ja + b*jb + c*jc);
+
+          const auto s = sampler(objects, orig, dir, seed);
+          p = s * 3.5f + p;
         }
 
-        bytes[k++] = (char)p.x();
-        bytes[k++] = (char)p.y();
-        bytes[k++] = (char)p.z();
+        bytes[k++] = clamp(p.x());
+        bytes[k++] = clamp(p.y());
+        bytes[k++] = clamp(p.z());
       }
     }
   };
@@ -267,5 +309,11 @@ int main(int argc, char **argv) {
     t.join();
   }
 
-  fwrite(bytes.data(), sizeof(bytes[0]), bytes.size(), stdout);
+  const auto overallDurationEnd = Clock::now();
+  const auto overallDuration = static_cast<ClockSec>(overallDurationEnd - overallDurationBegin);
+  outlog << "Average time taken " << (overallDuration.count() / iterations) << "s" << std::endl;
+
+  std::ofstream output("render.ppm");
+  output << "P6 " << imageSize << " " << imageSize << " 255 "; // The PPM Header is issued
+  output.write(reinterpret_cast<char*>(bytes.data()), bytes.size());
 }
