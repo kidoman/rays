@@ -184,6 +184,13 @@ func main() {
 
 type row int
 
+func clamp(v float64) byte {
+	if v > 255 {
+		return 255
+	}
+	return byte(v)
+}
+
 func (r row) render(a, b, c vector.Vector, ar float64, img *image, seed *uint32) {
 	k := (size - int(r) - 1) * 3 * size
 
@@ -197,11 +204,12 @@ func (r row) render(a, b, c vector.Vector, ar float64, img *image, seed *uint32)
 			p = sampler(orig, dir, seed).Scale(3.5).Add(p)
 		}
 
-		img.data[k] = byte(p.X)
-		img.data[k+1] = byte(p.Y)
-		img.data[k+2] = byte(p.Z)
-
-		k += 3
+		img.data[k] = clamp(p.X)
+		k++
+		img.data[k] = clamp(p.Y)
+		k++
+		img.data[k] = clamp(p.Z)
+		k++
 	}
 }
 
