@@ -6,6 +6,10 @@ class Image
     @data = Array.new(3 * width * height, 0)
   end
 
+  def []=(i, value)
+    @data[i] = [value, 255].min
+  end
+
   def save(pathname = 'render.ppm')
     File.write(pathname, to_ppm)
   end

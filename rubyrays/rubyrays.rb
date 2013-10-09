@@ -82,9 +82,9 @@ options[:times].times do
             p = raytracer.sample(o, d) * 3.5 + p
           end
 
-          image.data[k] = p.x.to_i
-          image.data[k+1] = p.y.to_i
-          image.data[k+2] = p.z.to_i
+          image[k] = p.x.to_i
+          image[k+1] = p.y.to_i
+          image[k+2] = p.z.to_i
 
           k += 3
         end
