@@ -1,4 +1,8 @@
+require_relative 'vector'
+
 class Image
+  DEFAULT_COLOR = Vector.new(13, 13, 13)
+
   attr_reader :data
 
   def initialize(width, height)

@@ -1,6 +1,11 @@
 require_relative 'vector'
 
 class Raytracer
+  SKY = Vector.new(1, 1, 1)
+
+  FLOOR_PATTERN_1 = Vector.new(3, 1, 1)
+  FLOOR_PATTERN_2 = Vector.new(3, 3, 3)
+
   def initialize(objects = [])
     @objects = objects
   end
@@ -12,7 +17,7 @@ class Raytracer
     if m == :miss_upward
       # the ray hits the sky
       p = 1 - d.z
-      return Vector.new(1, 1, 1) * p
+      return SKY * p
     end
 
     # intersection coordinate
@@ -36,11 +41,12 @@ class Raytracer
       # the ray hits the floor
       h = h * 0.2
 
-      if (h.x.ceil + h.y.ceil) & 1 == 1
-        pattern = Vector.new(3, 1, 1)
-      else
-        pattern = Vector.new(3, 3, 3)
-      end
+      pattern =
+        if (h.x.ceil + h.y.ceil) & 1 == 1
+          FLOOR_PATTERN_1
+        else
+          FLOOR_PATTERN_2
+        end
 
       return pattern * (b * 0.2 + 0.1)
     end

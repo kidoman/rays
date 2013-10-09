@@ -62,7 +62,7 @@ options[:times].times do
         k = (size - y - 1) * size * 3
 
         (size - 1).downto(0) do |x|
-          p = Vector.new(13, 13, 13)
+          p = Image::DEFAULT_COLOR
 
           # cast 64 rays per pixel
           64.times do
