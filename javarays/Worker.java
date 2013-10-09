@@ -147,9 +147,9 @@ final class Worker implements Runnable  {
             for (int x = Raycaster.size; x-- > 0 ; ) { // For each pixel in a line
                 // Reuse the vector class to store not XYZ but a RGB pixel color
                 final RayVector p = innerLoop(y, x, DEFAULT_COLOR);
-                bytes[k++] = (byte) p.x;
-                bytes[k++] = (byte) p.y;
-                bytes[k++] = (byte) p.z;
+                bytes[k++] = clamp(p.x);
+                bytes[k++] = clamp(p.y);
+                bytes[k++] = clamp(p.z);
             }
         }
     }
@@ -176,5 +176,12 @@ final class Worker implements Runnable  {
             p = sample(CAM_FOCAL_VEC.add(t), rayDirection).scale(3.5f).add(p); // +p for color accumulation
         }
         return p;
+    }
+
+    private final byte clamp(final float v) {
+        if (v > 255.f) {
+            return (byte) 255;
+        }
+        return (byte) v;
     }
 }
