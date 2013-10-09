@@ -12,7 +12,7 @@ class Raytracer
     if m == :miss_upward
       # the ray hits the sky
       p = 1 - d.z
-      return Vector.new(0.7, 0.6, 1) * p
+      return Vector.new(1, 1, 1) * p
     end
 
     # intersection coordinate
