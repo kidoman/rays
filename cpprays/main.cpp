@@ -88,9 +88,6 @@ private:
 typedef std::chrono::high_resolution_clock Clock;
 typedef std::chrono::duration<double> ClockSec;
 typedef std::vector<vector> Objects;
-
-Objects objects;
-
 typedef std::vector<std::string> Art;
 
 Objects makeObjects(const Art& art) {
