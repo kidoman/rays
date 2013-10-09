@@ -1,6 +1,3 @@
-#include <stdlib.h>
-#include <math.h>
-#include <cstring>
 #include <random>
 #include <thread>
 #include <vector>
