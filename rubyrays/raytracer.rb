@@ -12,8 +12,6 @@ class Raytracer
     if m == :miss_upward
       # the ray hits the sky
       p = 1 - d.z
-      p = p * p
-      p = p * p
       return Vector.new(0.7, 0.6, 1) * p
     end
 
