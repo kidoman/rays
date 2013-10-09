@@ -55,12 +55,12 @@ options[:times].times do
   raytracer = Raytracer.new(art.to_objects)
   image = Image.new(size, size)
 
-  Array.new(threads) do |id|
+  Array.new(options[:procs]) do |id|
     Thread.new do
-      (id...height).step(threads) do |y|
-        k = (height - y - 1) * width * 3
+      (id...size).step(options[:procs]) do |y|
+        k = (size - y - 1) * size * 3
 
-        (width - 1).downto(0) do |x|
+        (size - 1).downto(0) do |x|
           p = Vector.new(13, 13, 13)
 
           # cast 64 rays per pixel
