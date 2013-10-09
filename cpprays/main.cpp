@@ -92,6 +92,32 @@ typedef std::chrono::duration<double> ClockSec;
 typedef std::vector<vector> Objects;
 typedef std::vector<std::string> Art;
 
+struct Result {
+  Result(size_t times)
+    : average(0.0)
+    , samples(times)
+  {
+    std::fill(samples.begin(), samples.end(), 0.0);
+  }
+
+  std::string toJson() const {
+    std::ostringstream o;
+    o << "{\"average\":" << average << ",";
+    o << "\"samples\":[";
+    for(size_t i = 0; i < samples.size(); ++i) {
+      if(0 != i) {
+        o << ",";
+      }
+      o << samples[i];
+    }
+    o << "]}\n";
+    return o.str();
+  }
+
+  double average;
+  std::vector<double> samples;
+};
+
 struct CommandLine {
   CommandLine(int argc, char* argv[])
     : megaPixels { 1.0 }
@@ -285,6 +311,7 @@ int main(int argc, char **argv) {
   std::ifstream artFile(cl.artFilename);
   const auto art = readArt(artFile);
   const auto objects = makeObjects(art);
+  Result result(cl.times);
 
   const auto overallDurationBegin = Clock::now();
 
@@ -335,6 +362,7 @@ int main(int argc, char **argv) {
   };
 
   for(int iTimes = 0; iTimes < cl.times; ++iTimes) {
+    const auto t0 = Clock::now();
     std::mt19937 rgen;
     std::vector<std::thread> threads;
     for(int i = 0; i < cl.procs; ++i) {
@@ -343,13 +371,20 @@ int main(int argc, char **argv) {
     for(auto& t : threads) {
       t.join();
     }
+    const auto t1 = Clock::now();
+    result.samples[iTimes] = static_cast<ClockSec>(t1 - t0).count();
   }
 
   const auto overallDurationEnd = Clock::now();
   const auto overallDuration = static_cast<ClockSec>(overallDurationEnd - overallDurationBegin);
-  outlog << "Average time taken " << (overallDuration.count() / cl.times) << "s" << std::endl;
+  result.average = overallDuration.count() / cl.times;
+
+  outlog << "Average time taken " << result.average << "s" << std::endl;
 
   std::ofstream output(cl.outputFilename);
   output << "P6 " << imageSize << " " << imageSize << " 255 "; // The PPM Header is issued
   output.write(reinterpret_cast<char*>(bytes.data()), bytes.size());
+
+  std::ofstream resultFile(cl.resultFilename);
+  resultFile << result.toJson();
 }
