@@ -40,12 +40,10 @@ func readArt() art {
 
 func (a art) objects() []vector.Vector {
 	objects := make([]vector.Vector, 0)
-	nr := len(a)
-	for j := 0; j < nr; j++ {
-		nc := len(a[j])
-		for k := 0; k < nc; k++ {
-			if a[j][k] != ' ' {
-				objects = append(objects, vector.Vector{X: float64(k), Y: 6.5, Z: -float64(nr-1-j) - 1.5})
+	for j, line := range a {
+		for k, column := range line {
+			if column != ' ' {
+				objects = append(objects, vector.Vector{X: float64(k), Y: 6.5, Z: -float64(len(a)-j) - 1})
 			}
 		}
 	}
