@@ -7,6 +7,10 @@ Ray tracing based language benchmark inspired from:
   * http://www.cs.utah.edu/~aek/code/card.cpp ([expanded](https://gist.github.com/kid0m4n/6680629))
   * http://fabiensanglard.net/rayTracing_back_of_business_card/index.php
 
+## Reference Image
+
+Reference image rendered using the C++ version: [1 Megapixel](https://kidoman.com/images/reference_rays_1m.jpg) (also [2](https://kidoman.com/images/reference_rays_2m.jpg), [3](https://kidoman.com/images/reference_rays_3m.jpg) and [4](https://kidoman.com/images/reference_rays_4m.jpg))
+
 ## Why?
 
 I have written two blog posts describing the intent behind this:
