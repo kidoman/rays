@@ -94,6 +94,13 @@ typedef std::vector<std::string> Art;
 
 struct CommandLine {
   CommandLine(int argc, char* argv[])
+    : megaPixels { 1.0 }
+    , times { 1 }
+    , procs { getMaxThreads() }
+    , outputFilename { "render.ppm" }
+    , resultFilename { "result.json" }
+    , artFilename { "ART" }
+    , home { getEnv("RAYS_HOME") }
   {
     typedef const std::string& Arg;
     typedef std::function<void(Arg)> ArgFunc;
@@ -145,13 +152,13 @@ struct CommandLine {
     return x ? x : defaultMaxThreads;
   }
 
-  double megaPixels { 1.0 };
-  int times { 1 };
-  int procs { getMaxThreads() };
-  std::string outputFilename { "render.ppm" };
-  std::string resultFilename { "result.json" };
-  std::string artFilename { "ART" };
-  std::string home { getEnv("RAYS_HOME") };
+  double megaPixels;
+  int times;
+  int procs;
+  std::string outputFilename;
+  std::string resultFilename;
+  std::string artFilename;
+  std::string home;
 };
 
 Art readArt(std::istream& artFile) {
