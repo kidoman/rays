@@ -14,13 +14,12 @@ final class Worker implements Runnable  {
     private static final RayVector SKY_VEC   = new RayVector(1.f,  1.f,  1.f);
 
     // Ray Origin
-    private static final RayVector CAM_FOCAL_VEC   = new RayVector(16.f, 16.f,  8.f);
-    private static final RayVector T_CONST_VEC     = new RayVector( 0.f,  3.f, -4.f);
+    private static final RayVector CAM_FOCAL_VEC   = new RayVector(-5.f, 16.f,  8.f);
     private static final RayVector FLOOR_PATTERN_1 = new RayVector( 3.f,  1.f,  1.f);
     private static final RayVector FLOOR_PATTERN_2 = new RayVector( 3.f,  3.f,  3.f);
 
     private static final RayVector STD_VEC   = new RayVector(0.f,  0.f,  1.f);
-    private static final RayVector g = (new RayVector(-3.1f, -16.f, 3.2f)).norm(); // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
+    private static final RayVector g = (new RayVector(-3.1f, -16.f, 1.9f)).norm(); // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
 
     private static final RayVector a = (STD_VEC.cross(g)).norm().scale(.002f);
     private static final RayVector b = (g.cross(a)).norm().scale(.002f);
@@ -59,7 +58,6 @@ final class Worker implements Runnable  {
             m = 1;
         }
 
-        orig = orig.add(T_CONST_VEC);
         RayVector last = null;
         for(int i = 0; i < objects.length; i++) {
             // There is a sphere but does the ray hits it ?

@@ -32,11 +32,11 @@ public final class Raycaster {
         final Vector<RayVector> tmp = new Vector<>(art.length * art[0].length);
 
         final int nr = art.length;
-        final int nc = art[0].length;
-        for (int k = nc - 1; k >= 0; k--) {
-            for (int j = nr - 1; j >= 0; j--) {
-                if (art[j][nc - 1 - k] != ' ') {
-                    tmp.add(new RayVector(-k, 6.5f, -(nr - 1 - j) - 3.5f));
+        for (int j = 0; j < nr; j++) {
+            final int nc = art[j].length;
+            for (int k = 0; k < nc; k++) {
+                if (art[j][k] != ' ') {
+                    tmp.add(new RayVector(k, 6.5f, -(nr - j) - 1.0f));
                 }
             }
         }
