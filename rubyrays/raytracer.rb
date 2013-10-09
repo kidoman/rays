@@ -24,10 +24,13 @@ class Raytracer
     # b = Lambertian factor
     b = l.dot(n)
 
-    m2, *_ = trace(h, l)
-
     # illumination factor
-    b = 0 if b < 0 || m2 != :miss_upward
+    if b < 0
+      b = 0
+    else
+      m2, *_ = trace(h, l)
+      b = 0 if m2 != :miss_upward
+    end
 
     if m == :miss_downward
       # the ray hits the floor
