@@ -49,6 +49,7 @@ OptionParser.new do |o|
 end.parse!
 
 size = Math.sqrt(options[:megapixels] * 1000000).to_i
+aspect_ratio = 512.0 / size
 
 options[:times].times do
   art = Art.from_file(File.join(options[:home], options[:art]))
@@ -69,10 +70,13 @@ options[:times].times do
             t = (Camera::A * (rand() - 0.5)) * 99 + (Camera::B * (rand() - 0.5)) * 99
 
             # camera focal point
-            o = Vector.new(-5, 16, 8) + t
+            o = Camera::ORIGIN + t
 
             # ray direction with random deltas for stochastic sampling
-            d = ((t * -1) + (((Camera::A * (rand() + x)) + (Camera::B * (rand() + y)) + Camera::C) * 16)).norm
+            cam_a = Camera::A * (rand() + x * aspect_ratio)
+            cam_b = Camera::B * (rand() + y * aspect_ratio)
+            cam_c = cam_a + cam_b + Camera::C
+            d = (t * -1 + cam_c * 16).norm
 
             # pixel color accumulator
             p = raytracer.sample(o, d) * 3.5 + p
