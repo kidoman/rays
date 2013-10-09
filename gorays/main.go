@@ -161,7 +161,7 @@ func main() {
 			go worker(a, b, c, ar, img, rows, &wg)
 		}
 
-		for y := (size - 1); y >= 0; y-- {
+		for y := 0; y < size; y++ {
 			rows <- row(y)
 		}
 		close(rows)
