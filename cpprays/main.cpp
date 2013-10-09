@@ -5,9 +5,11 @@
 #include <thread>
 #include <vector>
 #include <string>
+#include <sstream>
 #include <fstream>
 #include <iostream>
 #include <chrono>
+#include <map>
 
 #if defined(RAYS_CPP_SSE)
 #include <smmintrin.h>
@@ -89,6 +91,68 @@ typedef std::chrono::high_resolution_clock Clock;
 typedef std::chrono::duration<double> ClockSec;
 typedef std::vector<vector> Objects;
 typedef std::vector<std::string> Art;
+
+struct CommandLine {
+  CommandLine(int argc, char* argv[])
+  {
+    typedef const std::string& Arg;
+    typedef std::function<void(Arg)> ArgFunc;
+    typedef std::map<std::string, ArgFunc> ArgFuncMap;
+
+    const ArgFuncMap optionMap {
+      { "-mp"  , [this](Arg v) { megaPixels = std::stof(v); } },
+      { "-t"   , [this](Arg v) { times = std::stoi(v); } },
+      { "-p"   , [this](Arg v) { procs = std::stoi(v); } },
+      { "-o"   , [this](Arg v) { outputFilename = v; } },
+      { "-r"   , [this](Arg v) { resultFilename = v; } },
+      { "-a"   , [this](Arg v) { artFilename = v; } },
+      { "-home", [this](Arg v) { home = v; } }
+    };
+
+    const std::string delim = "=";
+    for(int i = 1; i < argc; ++i) {
+      const auto arg = std::string { argv[i] };
+      const auto pos = arg.find(delim);
+      if(pos != std::string::npos) {
+        const auto a = arg.substr(0, pos);
+        const auto v = arg.substr(pos + 1);
+        const auto it = optionMap.find(a);
+        if(it != optionMap.end() && !v.empty()) {
+          it->second(v);
+        }
+      }
+    }
+  }
+
+  static std::string usage() {
+    return
+      "-mp=X      [        1.0] Megapixels of the rendered image\n"
+      "-t=N       [          1] Times to repeat the benchmark\n"
+      "-p=N       [   #Threads] Number of render threads\n"
+      "-o=FILE    [render.ppm ] Output file to write the rendered image to\n"
+      "-r=FILE    [result.json] Result file to write the benchmark data to\n"
+      "-a=FILE    [ART        ] the art file to use for rendering\n"
+      "-home=PATH [$RAYS_HOME ] RAYS folder\n";
+  }
+
+  static std::string getEnv(const std::string& env) {
+  const auto* s = std::getenv(env.c_str());
+    return std::string { s ? s : "" };
+  }
+
+  static int getMaxThreads(const int defaultMaxThreads = 8) {
+    const auto x = std::thread::hardware_concurrency();
+    return x ? x : defaultMaxThreads;
+  }
+
+  double megaPixels { 1.0 };
+  int times { 1 };
+  int procs { getMaxThreads() };
+  std::string outputFilename { "render.ppm" };
+  std::string resultFilename { "result.json" };
+  std::string artFilename { "ART" };
+  std::string home { getEnv("RAYS_HOME") };
+};
 
 Art readArt(std::istream& artFile) {
   Art art;
@@ -210,34 +274,14 @@ vector sampler(const Objects& objects, vector o,vector d, unsigned int& seed) {
 int main(int argc, char **argv) {
   auto& outlog = std::cerr;
 
-  std::ifstream artFile("ART");
+  const CommandLine cl(argc, argv);
+  std::ifstream artFile(cl.artFilename);
   const auto art = readArt(artFile);
   const auto objects = makeObjects(art);
 
-  const auto getIntArg = [&](int argIndex, int defaultValue) {
-    if(argc > argIndex) {
-      return std::stoi(argv[argIndex]);
-    }
-    return defaultValue;
-  };
-
-  const auto megaPixels = getIntArg(1, 1);
-  const auto iterations = getIntArg(2, 1);
-  const auto num_threads = [&]() {
-    int x = getIntArg(3, 0);
-    if(x <= 0) {
-      x = std::thread::hardware_concurrency();
-      if(0 == x) {
-        //8 threads is a reasonable assumption if we don't know how many cores there are
-        x = 8;
-      }
-    }
-    return x;
-  }();
-
   const auto overallDurationBegin = Clock::now();
 
-  const auto imageSize = static_cast<int>(sqrt(megaPixels * 1000 * 1000));
+  const auto imageSize = static_cast<int>(sqrt(cl.megaPixels * 1000.0 * 1000.0));
   std::vector<unsigned char> bytes(3 * imageSize * imageSize);
   const auto clamp = [](float v) -> unsigned char {
     if(v > 255.0f) {
@@ -283,20 +327,22 @@ int main(int argc, char **argv) {
     }
   };
 
-  std::mt19937 rgen;
-  std::vector<std::thread> threads;
-  for(int i=0;i<num_threads;++i) {
-    threads.emplace_back(lambda, rgen(), i, num_threads);
-  }
-  for(auto& t : threads) {
-    t.join();
+  for(int iTimes = 0; iTimes < cl.times; ++iTimes) {
+    std::mt19937 rgen;
+    std::vector<std::thread> threads;
+    for(int i = 0; i < cl.procs; ++i) {
+      threads.emplace_back(lambda, rgen(), i, cl.procs);
+    }
+    for(auto& t : threads) {
+      t.join();
+    }
   }
 
   const auto overallDurationEnd = Clock::now();
   const auto overallDuration = static_cast<ClockSec>(overallDurationEnd - overallDurationBegin);
-  outlog << "Average time taken " << (overallDuration.count() / iterations) << "s" << std::endl;
+  outlog << "Average time taken " << (overallDuration.count() / cl.times) << "s" << std::endl;
 
-  std::ofstream output("render.ppm");
+  std::ofstream output(cl.outputFilename);
   output << "P6 " << imageSize << " " << imageSize << " 255 "; // The PPM Header is issued
   output.write(reinterpret_cast<char*>(bytes.data()), bytes.size());
 }
