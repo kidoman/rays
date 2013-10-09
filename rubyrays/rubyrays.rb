@@ -18,7 +18,7 @@ OptionParser.new do |o|
   o.banner = "Usage: #{__FILE__} [options]"
 
   o.on '-m', '--megapixels <float>',
-      "Megapixels are the rendered image [#{options[:megapixels]}]" do |v|
+      "Megapixels of the rendered image [#{options[:megapixels]}]" do |v|
     options[:megapixels] = v.to_f
   end
 
