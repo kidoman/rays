@@ -5,7 +5,7 @@ import os, osproc
 
 # Define a vector class with constructor and operator: 'v'
 type 
-  TVector  = tuple[x, y, z: float] #TVector2 = tuple[k, j: float]
+  TVector  = tuple[x, y, z: float]
 
 proc `+`(this, r: TVector) : TVector =
   # Vector add
