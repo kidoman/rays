@@ -5,8 +5,7 @@ import os, osproc
 
 # Define a vector class with constructor and operator: 'v'
 type 
-  TVector  = tuple[x, y, z: float]
-  TVector2 = tuple[k, j: float]
+  TVector  = tuple[x, y, z: float] #TVector2 = tuple[k, j: float]
 
 proc `+`(this, r: TVector) : TVector =
   # Vector add
@@ -30,29 +29,40 @@ proc `!`(this: TVector) : TVector =
 
 
 let art = [ 
-  "                   ",
-  "    1111           ",
-  "   1    1          ",
-  "  1           11   ",
-  "  1          1  1  ",
-  "  1     11  1    1 ",
-  "  1      1  1    1 ",
-  "   1     1   1  1  ",
-  "    11111     11   "
+  " 1111            1     ",
+  " 1   11         1 1    ",
+  " 1     1       1   1   ",
+  " 1     1      1     1  ",
+  " 1    11     1       1 ",
+  " 11111       111111111 ",
+  " 1    1      1       1 ",
+  " 1     1     1       1 ",
+  " 1      1    1       1 ",
+  "                       ",
+  "1         1    11111   ",
+  " 1       1    1        ",
+  "  1     1    1         ",
+  "   1   1     1         ",
+  "    1 1       111111   ",
+  "     1              1  ",
+  "     1              1  ",
+  "     1             1   ",
+  "     1        111111   "
 ]
 
-var objects = newSeq[TVector2]()
+var objects = newSeq[TVector]()
 
-template makeObject (k, j: int) : TVector2 = (float(k), float(j))
 
-let
-  nr = len(art)
-  nc = len(art[0])
+var y = 1.0 - float(len(art))
+for line in art:
 
-for k in countdown(nc - 1, 0):
-  for j in countdown(nr - 1, 0):
-    if art[j][nc - 1 - k] != ' ': 
-      objects.add(makeObject(-k, -(nr - 1 - j)))
+  var x = 1.0 - float(len(line))
+  for c in line:
+    if c != ' ':
+      objects.add((float(x), 3.0, y - 4.0))
+      
+    x += 1.0
+  y += 1.0
 
 
 proc rnd(seed: var uint) : float =
@@ -64,23 +74,22 @@ proc rnd(seed: var uint) : float =
   return float(seed mod 95) / 95.0
 
 
-proc tracer(po, d: TVector, t: var float, n: var TVector) : int =
+proc tracer(o, d: TVector, t: var float, n: var TVector) : int =
   # The intersection test for line [o,v].
   # Return 2 if a hit was found (and also return distance t and bouncing ray n).
   # Return 0 if no hit was found but ray goes upward
   # Return 1 if no hit was found but ray goes downward
   t = 1e9
   result = 0
-  var p = -po.z / d.z
+  var p = -o.z / d.z
 
   if 0.01 < p:
     t = p; n = (0.0, 0.0, 1.0); result = 1
 
-  var o = po + (0.0, 3.0, -4.0)
   for obj in objects:
     # There is a sphere but does the ray hits it ?
     var
-      p  = o + (obj.k, 0.0, obj.j)
+      p  = o + obj
       b  = p % d
       c  = p % p - 1
       b2 = b * b
@@ -88,14 +97,17 @@ proc tracer(po, d: TVector, t: var float, n: var TVector) : int =
     # Does the ray hit the sphere ?
     if b2 > c:
       # It does, compute the distance camera-sphere
-      var
+      let
         q = b2 - c
         s = -b - sqrt(q)
 
       if s < t and s > 0.01:
         # So far this is the minimum distance, save it. And also
         # compute the bouncing ray vector into 'n'
-        t = s; n = !(p + d * t); result = 2
+        t=s; n=p; result = 2
+
+  if result == 2:
+    n = !(n + d * t)
 
 
 proc sampler(o, d: TVector, seed: var uint) : TVector =
@@ -104,17 +116,17 @@ proc sampler(o, d: TVector, seed: var uint) : TVector =
 
   var
     t: float
-    n, on: TVector
+    n: TVector
 
   # Search for an intersection ray Vs World.
-  var m = tracer(o, d, t, n)
-  on = n
+  let
+    m = tracer(o, d, t, n)
+    on = n
 
   if m == 0:
     # No sphere found and the ray goes upward: Generate a sky color
     var p = 1 - d.z
-    p = p*p*p
-    return (0.7, 0.6, 1.0) * p
+    return (1.0, 1.0, 1.0) * p
 
   # A sphere was maybe hit.
   var 
@@ -126,7 +138,7 @@ proc sampler(o, d: TVector, seed: var uint) : TVector =
   if b < 0 or tracer(h, l, t, n) > 0:
     b = 0
 
-  if (m and 1) == 1:
+  if m == 1:
     h = h * 0.2 # No sphere was hit and the ray was going downward: Generate a floor color
     return
       if (int(ceil(h.x) + ceil(h.y)) and 1) == 1: (3.0, 1.0, 1.0) * (b * 0.2 + 0.1)
@@ -151,8 +163,8 @@ proc sampler(o, d: TVector, seed: var uint) : TVector =
 # The main block. It generates a PPM image to stdout.
 # Usage of the program is hence: ./card > erk.ppm
 var
-  w = 512
-  h = 512
+  w = 768
+  h = 768
   num_threads = countProcessors()
 
 if num_threads == 0:
@@ -171,7 +183,7 @@ write(stdout, "P6 $1 $2 255 " % [$w, $h]) # The PPM Header is issued
 
 # The '!' are for normalizing each vectors with ! operator.
 var 
-  g = !(-5.5, -16.0, 0.0)           # Camera direction
+  g = !(-6.75, -16.0, 1.0)          # Camera direction
   a = !((0.0, 0.0, 1.0)^g) * 0.002  # Camera up vector...Seem Z is pointing up :/ WTF !
   b = !(g^a) * 0.002                # The right vector, obtained via traditional cross-product
   c = (a + b) * -256 + g            # WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
