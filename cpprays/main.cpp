@@ -94,15 +94,15 @@ Objects objects;
 typedef std::vector<std::string> Art;
 
 Objects makeObjects(const Art& art) {
-  const float ox = 1.0f;
+  const float ox = 0.0f;
   const float oy = 6.5f;
-  const float oz = -2.5f;
+  const float oz = -1.0f;
 
   Objects o;
   const float y = oy;
   auto z = oz - static_cast<float>(art.size());
   for(const auto& line : art) {
-    auto x = ox - static_cast<float>(line.size());
+    auto x = ox;
     for(const auto& c : line) {
       if(' ' != c) {
         o.emplace_back(x, y, z);
@@ -262,12 +262,12 @@ int main(int argc, char **argv) {
     }
   };
 
-  const auto g = !vector(-3.1f, -16.f, 3.2f);
+  const auto g = !vector(-3.1f, -16.f, 1.9f);
   const auto a = !(vector(0.0f, 0.0f, 1.0f)^g) * .002f;
   const auto b = !(g^a)*.002f;
   const auto c = (a+b)*-256.0f+g;
   const auto ar = 512.0f / static_cast<float>(imageSize);
-  const auto orig0 = vector(16.0f, 16.0f, 8.0f);
+  const auto orig0 = vector(-5.0f, 16.0f, 8.0f);
 
   auto lambda=[&](unsigned int seed, int offset, int jump) {
     for (int y=offset; y<imageSize; y+=jump) {    //For each row
