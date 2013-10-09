@@ -1,29 +1,12 @@
 require_relative 'vector'
 
 class Art
-  DEFAULT = [
-    " 11111           1    ",
-    " 1    1         1 1   ",
-    " 1     1       1   1  ",
-    " 1     1      1     1 ",
-    " 1    11     1       1",
-    " 11111       111111111",
-    " 1    1      1       1",
-    " 1     1     1       1",
-    " 1      1    1       1",
-    "                      ",
-    "1         1    11111  ",
-    " 1       1    1       ",
-    "  1     1    1        ",
-    "   1   1     1        ",
-    "    1 1       111111  ",
-    "     1              1 ",
-    "     1              1 ",
-    "     1             1  ",
-    "     1        111111  "
-  ]
+  def self.from_file(pathname)
+    lines = File.readlines(pathname).map(&:chomp)
+    new(lines)
+  end
 
-  def initialize(art = DEFAULT)
+  def initialize(art)
     @art = art
   end
 

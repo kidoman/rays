@@ -51,7 +51,7 @@ end.parse!
 size = Math.sqrt(options[:megapixels] * 1000000).to_i
 
 options[:times].times do
-  art = Art.new
+  art = Art.from_file(File.join(options[:home], options[:art]))
   raytracer = Raytracer.new(art.to_objects)
   image = Image.new(size, size)
 
