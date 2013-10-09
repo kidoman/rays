@@ -90,6 +90,14 @@ typedef std::chrono::duration<double> ClockSec;
 typedef std::vector<vector> Objects;
 typedef std::vector<std::string> Art;
 
+Art readArt(std::istream& artFile) {
+  Art art;
+  for(std::string line; std::getline(artFile, line); ) {
+    art.push_back(line);
+  }
+  return art;
+}
+
 Objects makeObjects(const Art& art) {
   const float ox = 0.0f;
   const float oy = 6.5f;
@@ -202,28 +210,8 @@ vector sampler(const Objects& objects, vector o,vector d, unsigned int& seed) {
 int main(int argc, char **argv) {
   auto& outlog = std::cerr;
 
-  const Art art {
-    " 11111           1    ",
-    " 1    1         1 1   ",
-    " 1     1       1   1  ",
-    " 1     1      1     1 ",
-    " 1    11     1       1",
-    " 11111       111111111",
-    " 1    1      1       1",
-    " 1     1     1       1",
-    " 1      1    1       1",
-    "                      ",
-    "1         1    11111  ",
-    " 1       1    1       ",
-    "  1     1    1        ",
-    "   1   1     1        ",
-    "    1 1       111111  ",
-    "     1              1 ",
-    "     1              1 ",
-    "     1             1  ",
-    "     1        111111  "
-  };
-
+  std::ifstream artFile("ART");
+  const auto art = readArt(artFile);
   const auto objects = makeObjects(art);
 
   const auto getIntArg = [&](int argIndex, int defaultValue) {
