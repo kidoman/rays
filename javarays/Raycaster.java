@@ -16,6 +16,7 @@ public final class Raycaster {
         " 1    1      1       1".toCharArray(),
         " 1     1     1       1".toCharArray(),
         " 1      1    1       1".toCharArray(),
+        "                      ".toCharArray(),
         "1         1    11111  ".toCharArray(),
         " 1       1    1       ".toCharArray(),
         "  1     1    1        ".toCharArray(),
