@@ -88,5 +88,9 @@ options[:times].times do
     end
   end.each(&:join)
 
-  puts image.to_ppm
+  if options[:output] == '-'
+    puts image.to_ppm
+  else
+    image.save(options[:output])
+  end
 end
