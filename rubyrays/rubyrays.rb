@@ -25,7 +25,7 @@ Array.new(threads) do |id|
           t = (Camera::A * (rand() - 0.5)) * 99 + (Camera::B * (rand() - 0.5)) * 99
 
           # camera focal point
-          o = Vector.new(17, 16, 8) + t
+          o = Vector.new(-5, 16, 8) + t
 
           # ray direction with random deltas for stochastic sampling
           d = ((t * -1) + (((Camera::A * (rand() + x)) + (Camera::B * (rand() + y)) + Camera::C) * 16)).norm
