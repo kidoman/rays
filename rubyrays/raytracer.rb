@@ -84,7 +84,6 @@ class Raytracer
       n = Vector::NORMAL
     end
 
-    o = o + Vector.new(0, 3, -4)
     last = nil
 
     @objects.each do |object|

@@ -13,24 +13,16 @@ class Art
   def to_objects
     objects = []
 
-    (width - 1).downto(0) do |k|
-      (height - 1).downto(0) do |j|
-        if @art[j][width - 1 - k] != ' '
-          objects << Vector.new(-k, 0, -(height - 1 -j))
+    height = @art.size
+
+    @art.each_with_index do |row, i|
+      row.each_char.each_with_index do |c, j|
+        if c != ' '
+          objects << Vector.new(j, 6.5, -(height - i) - 1)
         end
       end
     end
 
     objects
-  end
-
-  private
-
-  def width
-    @art[0].size
-  end
-
-  def height
-    @art.size
   end
 end
