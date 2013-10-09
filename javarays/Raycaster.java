@@ -7,25 +7,24 @@ import java.util.Vector;
 public final class Raycaster {
 
     private final static char[][] art = {
-        " 11111           1     ".toCharArray(),
-        " 1    1         1 1    ".toCharArray(),
-        " 1     1       1   1   ".toCharArray(),
-        " 1     1      1     1  ".toCharArray(),
-        " 1    11     1       1 ".toCharArray(),
-        " 11111       111111111 ".toCharArray(),
-        " 1    1      1       1 ".toCharArray(),
-        " 1     1     1       1 ".toCharArray(),
-        " 1      1    1       1 ".toCharArray(),
-        "                       ".toCharArray(),
-        "1         1    11111   ".toCharArray(),
-        " 1       1    1        ".toCharArray(),
-        "  1     1    1         ".toCharArray(),
-        "   1   1     1         ".toCharArray(),
-        "    1 1       111111   ".toCharArray(),
-        "     1              1  ".toCharArray(),
-        "     1              1  ".toCharArray(),
-        "     1             1   ".toCharArray(),
-        "     1        111111   ".toCharArray()
+        " 11111           1    ".toCharArray(),
+        " 1    1         1 1   ".toCharArray(),
+        " 1     1       1   1  ".toCharArray(),
+        " 1     1      1     1 ".toCharArray(),
+        " 1    11     1       1".toCharArray(),
+        " 11111       111111111".toCharArray(),
+        " 1    1      1       1".toCharArray(),
+        " 1     1     1       1".toCharArray(),
+        " 1      1    1       1".toCharArray(),
+        "1         1    11111  ".toCharArray(),
+        " 1       1    1       ".toCharArray(),
+        "  1     1    1        ".toCharArray(),
+        "   1   1     1        ".toCharArray(),
+        "    1 1       111111  ".toCharArray(),
+        "     1              1 ".toCharArray(),
+        "     1              1 ".toCharArray(),
+        "     1             1  ".toCharArray(),
+        "     1        111111  ".toCharArray()
     };
 
     static private RayVector[] buildObjects() {
