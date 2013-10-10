@@ -369,7 +369,7 @@ int main(int argc, char **argv) {
   Result result(cl.times);
 
   const auto imageSize = static_cast<int>(sqrt(cl.megaPixels * 1000.0 * 1000.0));
-  std::vector<unsigned char> bytes(3 * imageSize * imageSize);
+  std::vector<unsigned char> bytes(3 * imageSize * imageSize, 0);
 
   for(int iTimes = 0; iTimes < cl.times; ++iTimes) {
     const auto t0 = Clock::now();
