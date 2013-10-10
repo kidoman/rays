@@ -13,7 +13,7 @@ Vec(v::Vec) = Vec(v.x, v.y, v.z)
 # vector add
 +{T<:Real}(a::Vec{T}, b::Vec{T}) = Vec{T}(a.x + b.x, a.y + b.y, a.z + b.z)
 
-# vector scaling 
+# vector scaling
 *{T<:Real}(v::Vec{T}, x::T) = Vec{T}(v.x * x, v.y * x, v.z * x)
 *{T<:Real}(x::T, v::Vec{T}) = v * x
 
@@ -50,20 +50,11 @@ Base.write(s::IO, pix::RGB) = begin n = 0
 *{T<:Real}(x::T, p::RGB{T}) = p * x
 
 # clamp pixel values to prevent integer overflow artifacts
-clamp_rgb8{T<:Real}(v::T) = v < 0 ? uint8(0) : v > 255 ? uint8(255) : uint8(v) 
+clamp_rgb8{T<:Real}(v::T) = v < 0 ? uint8(0) : v > 255 ? uint8(255) : uint8(v)
 clamp_rgb8{T<:Real}(pix::RGB{T}) = RGB{Uint8}(clamp_rgb8(pix.r),
                                               clamp_rgb8(pix.g),
                                               clamp_rgb8(pix.b))
-# -- Objects to Render ---                                              
-
-#const julia_art = ["                     ",
-#                   "   11111    1        ",
-#                   "     1      1        ",
-#                   "     1      1 1      ",
-#                   "     1 1  1 1    111 ",
-#                   "     1 1  1 1 1 1  1 ",
-#                   "  1  1 1  1 1 1 1  11",
-#                   "  1111 1111 1 1 111 1"]
+# -- Objects to Render ---
 
 const rays_art = [
 " 1111            1    ",
@@ -125,29 +116,29 @@ const FLOOR_PATTERN2  = RGB{Float64}(3.0, 3.0, 3.0)
 # return NOHIT_UP if no hit was found but ray goes upward
 # return NOHIT_DOWN if no hit was found but ray goes downward
 function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
-    
+
     dist = 1e9
     st = NOHIT_UP
     p = -orig.z / dir.z
     bounce = EMPTY_VEC
-    
+
     # downward ray
     if (0.01 < p)
         dist = p
         bounce = STD_VEC
         st = NOHIT_DOWN
-    end 
-    
+    end
+
     # search for possible object hit
     for obj = objects
         p1 = orig + obj
         b  = dot(p1, dir)
         c  = dot(p1, p1) - 1.0
         b2 = b * b
-        # does the ray hit the sphere ? 
+        # does the ray hit the sphere ?
         if b2 > c
             # it does, compute the camera -> sphere dist
-            q = b2 - c 
+            q = b2 - c
             s = -b - sqrt(q)
             if s < dist && s > 0.01
                 dist = s
@@ -165,11 +156,11 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
 end
 
 
-# sample the world and return the pixel color 
+# sample the world and return the pixel color
 # for a ray passing by point o and d direction
 function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
-    
-    # search for an intersection ray vs world 
+
+    # search for an intersection ray vs world
     st, dist, bounce = intersect_test(orig, dir)
     obounce = bounce
 
@@ -182,11 +173,11 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     # sphere was maybe hit
     # (intersection coordinate)
     h = orig + dir * dist
-    
+
     # l => dirction of light with random delta for soft shadows
     l = Vec{T}(9.0 + rand(), 9.0 + rand(), 16.0)
     l = unit(l + (-1.0 * h))
-    
+
     # calculate lambertian factor
     b = dot(l, bounce)
 
@@ -198,7 +189,7 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
             b = 0.0
         end
     end
-    
+
     # no object hit, return floor pixel value
     if st == NOHIT_DOWN
         h = h * 0.2
@@ -208,10 +199,10 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
 
     # half vector
     r = dir + obounce * dot(obounce, dir * -2.0)
-    
+
     # calculate the color p with diffuse and specular component
     p = dot(l, r * (b > 0.0 ? 1.0 : 0.0))
-    
+
     #p ^= 33
     # only slightly faster (~%5) on my computer
     p33 = p * p
@@ -220,28 +211,28 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     p33 = p33 * p33
     p33 = p33 * p33
     p33 = p33 * p
-    p = p33 * p33 * p33 
-    
+    p = p33 * p33 * p33
+
     # st == HIT a sphere was hit. cast a ray bouncing from sphere surface
     return RGB{T}(p, p, p) + sample_world(h, r) * 0.5
 end
 
 
 function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
-    
+
     # camera direction
-    cam_dir = unit(Vec{Float64}(-3.1, -16.0, 3.2))
-        
+    cam_dir = unit(Vec{Float64}(-3.1, -16.0, 1.9))
+
     # camera up vector
     cam_up = unit(cross(STD_VEC, cam_dir)) * 0.002
-        
-    # right vector 
-    cam_right = unit(cross(cam_dir, cam_up)) * 0.002 
+
+    # right vector
+    cam_right = unit(cross(cam_dir, cam_up)) * 0.002
     c = ((cam_up + cam_right) * -256.0) + cam_dir
-    
+
     # aspect ratio
     ar = 512.0 / size
-               
+
     for y in 0:(size - 1)
         for x in 0:(size - 1)
             pix = DEFAULT_COLOR
@@ -250,9 +241,9 @@ function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
                 # a little bit of delta up/down and left/right
                 t = (cam_up * (rand() - 0.5) * 99.0) + (cam_right * (rand() - 0.5) * 99.0)
                 # set the camera focal point and cast the ray
-                # accumulating the color returned in pix 
+                # accumulating the color returned in pix
                 orig = CAMERA_VEC + t
-                dir = ((-1.0 * t) + (cam_up * (rand() + ar * float(x)) + 
+                dir = ((-1.0 * t) + (cam_up * (rand() + ar * float(x)) +
                                      cam_right * (rand() + ar * float(y)) + c) * 16.0)
                 dir = unit(dir)
                 pix += (sample_world(orig, unit(dir)) * 3.5)
@@ -267,11 +258,11 @@ end
 function main(megapixels::FloatingPoint, times::Integer = 1)
     @assert megapixels > 0
     size = int(sqrt(megapixels * 1e6))
-    
+
     # write PPM header
     header = bytestring("P6 $size $size 255 ")
     write(STDOUT, header)
-    
+
     pixels = Array(RGB{Uint8}, size^2)
     for _ in 1:times
         render!(pixels, size)
@@ -281,7 +272,7 @@ end
 end
 
 nargs = length(ARGS)
-if nargs     == 0 Rays.main(1.0) 
+if nargs     == 0 Rays.main(1.0)
 elseif nargs == 1 Rays.main(float(ARGS[1]))
 elseif nargs == 2 Rays.main(float(ARGS[1]), int(ARGS[2]))
 else println("Error: too many arguments")
