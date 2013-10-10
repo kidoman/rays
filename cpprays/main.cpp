@@ -315,7 +315,7 @@ int main(int argc, char **argv) {
   }();
   std::ifstream artFile(artFilename);
 
-  if (artFile.rdstate() & std::ifstream::failbit) {
+  if (artFile.fail()) {
     outlog << "Failed to open ART file" << std::endl;
     std::exit(1);
   }
