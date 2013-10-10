@@ -96,7 +96,7 @@ struct Result {
   {}
 
   std::string toJson() const {
-    auto o = std::ostringstream{};
+    std::ostringstream o; // don't use auto for GCC 4.6
     o << "{\"average\":" << average() << ",";
     o << "\"samples\":[";
     for(size_t i = 0; i < samples.size(); ++i) {
@@ -312,7 +312,7 @@ vector sampler(const Objects& objects, vector o,vector d, unsigned int& seed) {
   return vector(p,p,p)+sampler(objects, h,r,seed)*.5f;
 }
 
-void worker(unsigned char* dst, int imageSize, Objects& objects, unsigned int seed, int offset, int jump) {
+void worker(unsigned char* dst, int imageSize, const Objects& objects, unsigned int seed, int offset, int jump) {
   const auto g = !vector(-3.1f, -16.f, 1.9f);
   const auto a = !(vector(0.0f, 0.0f, 1.0f)^g) * .002f;
   const auto b = !(g^a)*.002f;
@@ -359,7 +359,7 @@ int main(int argc, char **argv) {
     }
     return s + cl.artFilename;
   }();
-  auto artFile = std::ifstream { artFilename };
+  std::ifstream artFile { artFilename }; // don't use auto for GCC 4.6
 
   if (artFile.fail()) {
     outlog << "Failed to open ART file (" << artFilename << ")" << std::endl;
@@ -392,10 +392,10 @@ int main(int argc, char **argv) {
 
   outlog << "Average time taken " << result.average() << "s" << std::endl;
 
-  auto output = std::ofstream { cl.outputFilename };
+  std::ofstream output { cl.outputFilename }; // don't use auto for GCC 4.6
   output << "P6 " << imageSize << " " << imageSize << " 255 "; // The PPM Header is issued
   output.write(reinterpret_cast<char*>(bytes.data()), bytes.size());
 
-  auto resultFile = std::ofstream { cl.resultFilename };
+  std::ofstream resultFile { cl.resultFilename }; // don't use auto for GCC 4.6
   resultFile << result.toJson();
 }
