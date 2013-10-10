@@ -96,7 +96,7 @@ struct Result {
   {}
 
   std::string toJson() const {
-    std::ostringstream o;
+    auto o = std::ostringstream{};
     o << "{\"average\":" << average() << ",";
     o << "\"samples\":[";
     for(size_t i = 0; i < samples.size(); ++i) {
@@ -141,7 +141,7 @@ struct CommandLine {
     };
 
     const auto delim = '=';
-    for(int i = 1; i < argc; ++i) {
+    for(auto i = 1; i < argc; ++i) {
       const auto arg = std::string { argv[i] };
       const auto pos = arg.find(delim);
       if(pos != std::string::npos) {
@@ -167,7 +167,7 @@ struct CommandLine {
   }
 
   static std::string getEnv(const std::string& env) {
-  const auto* s = std::getenv(env.c_str());
+    const auto* s = std::getenv(env.c_str());
     return std::string { s ? s : "" };
   }
 
@@ -194,12 +194,12 @@ Art readArt(std::istream& artFile) {
 }
 
 Objects makeObjects(const Art& art) {
-  const float ox = 0.0f;
-  const float oy = 6.5f;
-  const float oz = -1.0f;
+  const auto ox = 0.0f;
+  const auto oy = 6.5f;
+  const auto oz = -1.0f;
 
   Objects o;
-  const float y = oy;
+  const auto y = oy;
   auto z = oz - static_cast<float>(art.size());
   for(const auto& line : art) {
     auto x = ox;
@@ -239,7 +239,7 @@ enum class Status {
 Status tracer(const Objects& objects, vector o, vector d, float& t, vector& n) {
   t=1e9f;
   auto m = Status::kMissUpward;
-  const float p=-o.z()/d.z();
+  const auto p = -o.z() / d.z();
 
   if(.01f < p) {
     t = p;
@@ -248,13 +248,14 @@ Status tracer(const Objects& objects, vector o, vector d, float& t, vector& n) {
   }
 
   for (const auto& obj : objects) {
-    const vector p = o + obj;
-    const float b = p % d,
-      c = p%p-1.0f,
-      b2 = b * b;
+    const auto p = o + obj;
+    const auto b = p % d;
+    const auto c = p % p - 1.0f;
+    const auto b2 = b * b;
 
     if(b2>c) {
-      const float q=b2-c, s=-b-sqrtf(q);
+      const auto q = b2 - c;
+      const auto s = -b - sqrtf(q);
 
       if(s < t && s > .01f) {
         t = s;
@@ -279,14 +280,13 @@ vector sampler(const Objects& objects, vector o,vector d, unsigned int& seed) {
   const vector on = n;
 
   if(m == Status::kMissUpward) {
-    float p = 1 - d.z();
+    const auto p = 1.f - d.z();
     return vector(1.f, 1.f, 1.f) * p;
   }
 
-  vector h=o+d*t,
-    l=!(vector(9.0f+rnd(seed),9.0f+rnd(seed),16.0f)+h*-1);
-
-  float b=l%n;
+  auto h = o+d*t;
+  auto l = !(vector(9.0f+rnd(seed),9.0f+rnd(seed),16.0f)+h*-1);
+  auto b = l % n;
 
   if(b < 0.0f || tracer(objects, h, l, t, n) != Status::kMissUpward)
     b=0.0f;
@@ -296,17 +296,8 @@ vector sampler(const Objects& objects, vector o,vector d, unsigned int& seed) {
     return((int)(ceil(h.x())+ceil(h.y()))&1?vector(3.0f,1.0f,1.0f):vector(3.0f,3.0f,3.0f))*(b*.2f+.1f);
   }
 
-  const vector r=d+on*(on%d*-2.0f);               // r = The half-vector
-
-  float p=l%r*(b>0);
-  float p33 = p*p;
-  p33 = p33*p33;
-  p33 = p33*p33;
-  p33 = p33*p33;
-  p33 = p33*p33;
-  p33 = p33*p;
-  p = p33*p33*p33;
-
+  const auto r = d+on*(on%d*-2.0f);               // r = The half-vector
+  const auto p = pow(l % r * (b > 0.0f), 99.0f);
   return vector(p,p,p)+sampler(objects, h,r,seed)*.5f;
 }
 
@@ -318,13 +309,13 @@ void worker(unsigned char* dst, int imageSize, Objects& objects, unsigned int se
   const auto ar = 512.0f / static_cast<float>(imageSize);
   const auto orig0 = vector(-5.0f, 16.0f, 8.0f);
 
-  for (int y=offset; y<imageSize; y+=jump) {
-    int k = (imageSize - y - 1) * imageSize * 3;
+  for (auto y = offset; y < imageSize; y += jump) {
+    auto k = (imageSize - y - 1) * imageSize * 3;
 
-    for(int x=imageSize;x--;) {
-      vector p(13.0f,13.0f,13.0f);
+    for(auto x=imageSize;x--;) {
+      auto p = vector(13.0f, 13.0f, 13.0f);
 
-      for(int r=64;r--;) {
+      for(auto r = 0; r < 64; ++r) {
         const auto t = a*((rnd(seed)-.5f)*99.0f) + b*((rnd(seed)-.5f)*99.0f);
 
         const auto orig = orig0 + t;
@@ -349,7 +340,7 @@ void worker(unsigned char* dst, int imageSize, Objects& objects, unsigned int se
 int main(int argc, char **argv) {
   auto& outlog = std::cerr;
 
-  const CommandLine cl(argc, argv);
+  const auto cl = CommandLine { argc, argv };
   const auto artFilename = [&]() {
     std::string s;
     if(cl.artFilename == "ART" && !cl.home.empty()) {
@@ -357,26 +348,26 @@ int main(int argc, char **argv) {
     }
     return s + cl.artFilename;
   }();
-  std::ifstream artFile(artFilename);
+  auto artFile = std::ifstream { artFilename };
 
   if (artFile.fail()) {
-    outlog << "Failed to open ART file" << std::endl;
+    outlog << "Failed to open ART file (" << artFilename << ")" << std::endl;
     std::exit(1);
   }
 
   const auto art = readArt(artFile);
   const auto objects = makeObjects(art);
-  Result result(cl.times);
+  auto result = Result { static_cast<size_t>(cl.times) };
 
   const auto imageSize = static_cast<int>(sqrt(cl.megaPixels * 1000.0 * 1000.0));
-  std::vector<unsigned char> bytes(3 * imageSize * imageSize, 0);
+  auto bytes = std::vector<unsigned char>(3 * imageSize * imageSize, 0);
 
-  for(int iTimes = 0; iTimes < cl.times; ++iTimes) {
+  for(auto iTimes = 0; iTimes < cl.times; ++iTimes) {
     const auto t0 = Clock::now();
 
-    std::mt19937 rgen;
-    std::vector<std::thread> threads;
-    for(int i = 0; i < cl.procs; ++i) {
+    auto rgen = std::mt19937 {};
+    auto threads = std::vector<std::thread>{};
+    for(auto i = 0; i < cl.procs; ++i) {
       threads.emplace_back(worker, bytes.data(), imageSize, objects, rgen(), i, cl.procs);
     }
     for(auto& t : threads) {
@@ -390,10 +381,10 @@ int main(int argc, char **argv) {
 
   outlog << "Average time taken " << result.average() << "s" << std::endl;
 
-  std::ofstream output(cl.outputFilename);
+  auto output = std::ofstream { cl.outputFilename };
   output << "P6 " << imageSize << " " << imageSize << " 255 "; // The PPM Header is issued
   output.write(reinterpret_cast<char*>(bytes.data()), bytes.size());
 
-  std::ofstream resultFile(cl.resultFilename);
+  auto resultFile = std::ofstream { cl.resultFilename };
   resultFile << result.toJson();
 }
