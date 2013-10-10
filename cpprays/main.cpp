@@ -308,7 +308,13 @@ int main(int argc, char **argv) {
   auto& outlog = std::cerr;
 
   const CommandLine cl(argc, argv);
-  const auto artFilename = cl.artFilename == "ART" ? (cl.home + "/" + cl.artFilename) : cl.artFilename;
+  const auto artFilename = [&]() {
+    std::string s;
+    if(cl.artFilename == "ART" && !cl.home.empty()) {
+      s += cl.home + "/";
+    }
+    return s + cl.artFilename;
+  }();
   std::ifstream artFile(artFilename);
 
   if (artFile.rdstate() & std::ifstream::failbit) {
