@@ -219,7 +219,6 @@ end
 
 
 function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
-
     # camera direction
     cam_dir = unit(Vec{Float64}(-3.1, -16.0, 1.9))
 
