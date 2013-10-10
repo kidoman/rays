@@ -48,7 +48,7 @@ block readArt:
   input.close()
 
 
-# Parse Art into objects
+# Parse Art into vector objects
 var objects = newSeq[TVector]()
 block makeObjects:
   var
@@ -104,7 +104,7 @@ proc tracer(o, d: TVector, t: var float, n: var TVector) : TStatus =
       if s < t and s > 0.01:
         # So far this is the minimum distance, save it. And also
         # compute the bouncing ray vector into 'n'
-        t = s; n = p; result = Hit
+        t=s; n=p; result=Hit
 
   if result == Hit:
     n = !(n + d * t)
@@ -119,7 +119,7 @@ proc sampler(o, d: TVector, seed: var uint) : TVector =
 
   # Search for an intersection ray Vs World.
   let
-    m  = tracer(o, d, t, n)
+    m = tracer(o, d, t, n)
     on = n
 
   if m == MissUpward:
@@ -166,8 +166,8 @@ template clamp(v: float) : char =
 
 ## Main Entry Point
 var
-  megaPixels  = 1
-  iterations  = 1
+  megaPixels = 1
+  iterations = 1
   num_threads = countProcessors()
 
 if num_threads == 0:
@@ -225,9 +225,6 @@ proc worker(args: TWorkerArgs) {.thread.} =
       bytes[k] = clamp(p.y); inc(k)
       bytes[k] = clamp(p.z); inc(k)
 
-var
-  samples   = newSeq[float](iterations)
-  totalTime = 0.0
 
 echo "Running ", iterations, " iterations"
 
@@ -235,7 +232,7 @@ for t in 0 .. iterations-1:
   echo "Running... ", t+1
   var threads = newSeq[TThread[TWorkerArgs]](num_threads)
 
-  let clockBegin = cpuTime()
+  let clockBegin = epochTime()
 
   for i in 0 .. num_threads-1:
     createThread(
@@ -246,7 +243,7 @@ for t in 0 .. iterations-1:
 
   joinThreads(threads)
 
-  let timeTaken = cpuTime() - clockBegin
+  let timeTaken = epochTime() - clockBegin
   samples[t] = timeTaken
   totalTime += timeTaken
 
@@ -255,17 +252,14 @@ for t in 0 .. iterations-1:
 let averageTime = totalTime / float(iterations)
 echo "Average time taken ", formatFloat(averageTime, ffDecimal, precision = 3), "s"
 
-# Write out result.json
 var result: TFile
 if result.open("result.json", fmWrite):
   let res = %{"average": %formatFloat(averageTime, ffDecimal, precision = 3)}
   res["samples"] = newJArray()
   for s in samples:
-    res["samples"].add(%formatFloat(s, ffDecimal, precision = 3))
-  result.write($res)
-  result.close()
+    add(res["samples"], %formatFloat(s, ffDecimal, precision = 3))
+  write(result, $res)
 
-# Write out render.ppm
 var output: TFile
 if output.open("render.ppm", fmWrite):
   write(output, "P6 $1 $1 255 " % [$imageSize]) # The PPM Header is issued
