@@ -92,10 +92,8 @@ typedef std::vector<std::string> Art;
 
 struct Result {
   Result(size_t times)
-    : samples(times)
-  {
-    std::fill(samples.begin(), samples.end(), 0.0);
-  }
+    : samples(times, 0.0)
+  {}
 
   std::string toJson() const {
     std::ostringstream o;
