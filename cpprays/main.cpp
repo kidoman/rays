@@ -7,6 +7,7 @@
 #include <iostream>
 #include <chrono>
 #include <map>
+#include <numeric>
 
 #if defined(RAYS_CPP_SSE)
 #include <smmintrin.h>
@@ -91,15 +92,14 @@ typedef std::vector<std::string> Art;
 
 struct Result {
   Result(size_t times)
-    : average(0.0)
-    , samples(times)
+    : samples(times)
   {
     std::fill(samples.begin(), samples.end(), 0.0);
   }
 
   std::string toJson() const {
     std::ostringstream o;
-    o << "{\"average\":" << average << ",";
+    o << "{\"average\":" << average() << ",";
     o << "\"samples\":[";
     for(size_t i = 0; i < samples.size(); ++i) {
       if(0 != i) {
@@ -111,7 +111,10 @@ struct Result {
     return o.str();
   }
 
-  double average;
+  double average() const {
+    return std::accumulate(samples.begin(), samples.end(), 0.0) / samples.size();
+  }
+
   std::vector<double> samples;
 };
 
@@ -356,8 +359,6 @@ int main(int argc, char **argv) {
     }
   };
 
-  const auto overallDurationBegin = Clock::now();
-
   for(int iTimes = 0; iTimes < cl.times; ++iTimes) {
     const auto t0 = Clock::now();
 
@@ -378,13 +379,10 @@ int main(int argc, char **argv) {
     }
     const auto t1 = Clock::now();
     result.samples[iTimes] = static_cast<ClockSec>(t1 - t0).count();
+    outlog << "Time taken for render " << result.samples[iTimes] << "s" << std::endl;
   }
 
-  const auto overallDurationEnd = Clock::now();
-  const auto overallDuration = static_cast<ClockSec>(overallDurationEnd - overallDurationBegin);
-  result.average = overallDuration.count() / cl.times;
-
-  outlog << "Average time taken " << result.average << "s" << std::endl;
+  outlog << "Average time taken " << result.average() << "s" << std::endl;
 
   std::ofstream output(cl.outputFilename);
   output << "P6 " << imageSize << " " << imageSize << " 255 "; // The PPM Header is issued
