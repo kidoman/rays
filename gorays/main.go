@@ -24,8 +24,6 @@ var (
 	home       = flag.String("home", os.Getenv("RAYS_HOME"), "RAYS folder")
 )
 
-var size int
-
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU() + 1)
 	flag.Parse()
@@ -39,7 +37,7 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	size = int(math.Sqrt(*mp * 1000000))
+	size := int(math.Sqrt(*mp * 1000000))
 	log.Printf("Will render %v time(s)", *times)
 	if *procs < 1 {
 		log.Fatalf("procs (%v) needs to be >= 1", *procs)
@@ -68,16 +66,13 @@ func main() {
 		runtime.ReadMemStats(&beforeMemstats)
 		startTime := time.Now()
 
-		camDir := vector{X: -3.1, Y: -16, Z: 1.9}.Normalize()
-		camUp := vector{X: 0, Y: 0, Z: 1}.CrossProduct(camDir).Normalize().Scale(0.002)
-		camRight := camDir.CrossProduct(camUp).Normalize().Scale(0.002)
-		eyeOffset := camUp.Add(camRight).Scale(-256).Add(camDir)
-		ar := 512 / float64(size)
+		cam := newCamera(vector{X: -3.1, Y: -16, Z: 1.9}, size)
 
-		var wg sync.WaitGroup
+		wg := &sync.WaitGroup{}
 		wg.Add(*procs)
 		for i := 0; i < *procs; i++ {
-			go worker(i).render(camUp, camRight, eyeOffset, ar, img, &wg)
+			w := &worker{id: i, size: size, cam: cam, wg: wg, img: img}
+			go w.render()
 		}
 		wg.Wait()
 
@@ -101,33 +96,63 @@ func main() {
 	img.Save()
 }
 
-type worker int
+type camera struct {
+	dir       vector
+	up        vector
+	right     vector
+	eyeOffset vector
+	ar        float64
+}
 
-func (w worker) render(camUp, camRight, eyeOffset vector, ar float64, img *image, wg *sync.WaitGroup) {
+func newCamera(dir vector, size int) *camera {
+	dir = dir.Normalize()
+	up := vector{X: 0, Y: 0, Z: 1}.CrossProduct(dir).Normalize().Scale(0.002)
+	right := dir.CrossProduct(up).Normalize().Scale(0.002)
+	eyeOffset := up.Add(right).Scale(-256).Add(dir)
+	ar := 512 / float64(size)
+
+	return &camera{
+		dir:       dir,
+		up:        up,
+		right:     right,
+		eyeOffset: eyeOffset,
+		ar:        ar,
+	}
+}
+
+type worker struct {
+	id   int
+	size int
+	cam  *camera
+	wg   *sync.WaitGroup
+	img  *image
+}
+
+func (w *worker) render() {
 	runtime.LockOSThread()
-	defer wg.Done()
+	defer w.wg.Done()
 
 	s := rand.Uint32()
 	seed := &s
 
-	for y := int(w); y < size; y += *procs {
-		k := (size - y - 1) * 3 * size
+	for y := w.id; y < w.size; y += *procs {
+		k := (w.size - y - 1) * 3 * w.size
 
-		for x := (size - 1); x >= 0; x-- {
+		for x := (w.size - 1); x >= 0; x-- {
 			p := vector{X: 13, Y: 13, Z: 13}
 
 			for i := 0; i < 64; i++ {
-				t := camUp.Scale(rnd(seed) - 0.5).Scale(99).Add(camRight.Scale(rnd(seed) - 0.5).Scale(99))
+				t := w.cam.up.Scale(rnd(seed) - 0.5).Scale(99).Add(w.cam.right.Scale(rnd(seed) - 0.5).Scale(99))
 				orig := vector{X: -5, Y: 16, Z: 8}.Add(t)
-				dir := t.Scale(-1).Add(camUp.Scale(rnd(seed) + float64(x)*ar).Add(camRight.Scale(rnd(seed) + float64(y)*ar)).Add(eyeOffset).Scale(16)).Normalize()
+				dir := t.Scale(-1).Add(w.cam.up.Scale(rnd(seed) + float64(x)*w.cam.ar).Add(w.cam.right.Scale(rnd(seed) + float64(y)*w.cam.ar)).Add(w.cam.eyeOffset).Scale(16)).Normalize()
 				p = sampler(orig, dir, seed).Scale(3.5).Add(p)
 			}
 
-			img.data[k] = clamp(p.X)
+			w.img.data[k] = clamp(p.X)
 			k++
-			img.data[k] = clamp(p.Y)
+			w.img.data[k] = clamp(p.Y)
 			k++
-			img.data[k] = clamp(p.Z)
+			w.img.data[k] = clamp(p.Z)
 			k++
 		}
 	}
