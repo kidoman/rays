@@ -56,7 +56,7 @@ clamp_rgb8{T<:Real}(pix::RGB{T}) = RGB{Uint8}(clamp_rgb8(pix.r),
                                               clamp_rgb8(pix.b))
 # -- Objects to Render ---
 
-const rays_art = [
+const art = [
 " 1111            1    ",
 " 1   11         1 1   ",
 " 1     1       1   1  ",
@@ -77,16 +77,15 @@ const rays_art = [
 "     1             1  ",
 "     1        111111  "]
 
-const art = rays_art
-
 function make_objects()
-    nr = length(art)
-    nc = length(art[1])
     objs = Array(Vec{Float64}, 0)
-    for k in (nc-1):-1:0
-        for j in (nr-1):-1:0
-            if art[j+1][nc-k] != ' '
-                push!(objs, Vec{Float64}(-float(k), 6.5, -(nr - 1.0 - j) - 3.5))
+
+    nr = length(art)
+    for j in 1:nr
+        nc = length(art[j])
+        for k in 1:nc
+            if art[j][k] != ' '
+                push!(objs, Vec{Float64}(float(k-1), 6.5, -(nr - j) - 2.0))
             end
         end
     end
@@ -100,7 +99,7 @@ const HIT        = 2
 const NOHIT_DOWN = 1
 const NOHIT_UP   = 0
 
-const CAMERA_VEC  = Vec{Float64}(16.0, 16.0, 8.0)
+const CAMERA_VEC  = Vec{Float64}(-5.0, 16.0, 8.0)
 const EMPTY_VEC   = Vec{Float64}(0.0, 0.0, 0.0)
 const STD_VEC     = Vec{Float64}(0.0, 0.0, 1.0)
 
