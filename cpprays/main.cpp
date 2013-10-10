@@ -236,15 +236,20 @@ enum class Status {
   kHit
 };
 
-Status tracer(const Objects& objects, vector o, vector d, float& t, vector& n) {
-  t=1e9f;
-  auto m = Status::kMissUpward;
+struct TracerResult {
+  vector n;
+  Status m;
+  float t;
+};
+
+TracerResult tracer(const Objects& objects, vector o, vector d) {
+  auto tr = TracerResult { vector(0.0f, 0.0f, 1.0f), Status::kMissUpward, 1e9f };
   const auto p = -o.z() / d.z();
 
   if(.01f < p) {
-    t = p;
-    n = vector(0.0f, 0.0f, 1.0f);
-    m = Status::kMissDownward;
+    tr.t = p;
+    tr.n = vector(0.0f, 0.0f, 1.0f);
+    tr.m = Status::kMissDownward;
   }
 
   for (const auto& obj : objects) {
@@ -257,43 +262,49 @@ Status tracer(const Objects& objects, vector o, vector d, float& t, vector& n) {
       const auto q = b2 - c;
       const auto s = -b - sqrtf(q);
 
-      if(s < t && s > .01f) {
-        t = s;
-        n = p;
-        m = Status::kHit;
+      if(s < tr.t && s > .01f) {
+        tr.t = s;
+        tr.n = p;
+        tr.m = Status::kHit;
       }
     }
   }
 
-  if (m == Status::kHit)
-    n=!(n+d*t);
+  if (tr.m == Status::kHit)
+    tr.n=!(tr.n+d*tr.t);
 
-  return m;
+  return tr;
 }
 
 vector sampler(const Objects& objects, vector o,vector d, unsigned int& seed) {
-  float t;
-  vector n;
-
   //Search for an intersection ray Vs World.
-  const auto m = tracer(objects, o, d, t, n);
-  const vector on = n;
+  const auto tr = tracer(objects, o, d);
 
-  if(m == Status::kMissUpward) {
+  if(tr.m == Status::kMissUpward) {
     const auto p = 1.f - d.z();
     return vector(1.f, 1.f, 1.f) * p;
   }
 
-  auto h = o+d*t;
-  auto l = !(vector(9.0f+rnd(seed),9.0f+rnd(seed),16.0f)+h*-1);
-  auto b = l % n;
+  const auto on = tr.n;
+  auto h = o+d*tr.t;
+  const auto l = !(vector(9.0f+rnd(seed),9.0f+rnd(seed),16.0f)+h*-1);
+  auto b = l % tr.n;
 
-  if(b < 0.0f || tracer(objects, h, l, t, n) != Status::kMissUpward)
-    b=0.0f;
+  if(b < 0.0f) {
+    b = 0.0f;
+  } else {
+    const auto tr2 = tracer(objects, h, l);
+    if(tr2.m != Status::kMissUpward) {
+      b = 0.0f;
+    }
+  }
 
-  if(m == Status::kMissDownward) {
-    h=h*.2f;
-    return((int)(ceil(h.x())+ceil(h.y()))&1?vector(3.0f,1.0f,1.0f):vector(3.0f,3.0f,3.0f))*(b*.2f+.1f);
+  if(tr.m == Status::kMissDownward) {
+    h = h * .2f;
+    b = b * .2f + .1f;
+    const auto chk = static_cast<int>(ceil(h.x()) + ceil(h.y())) & 1;
+    const auto bc  = (0 != chk) ? vector(3.0f, 1.0f, 1.0f) : vector(3.0f, 3.0f, 3.0f);
+    return bc * b;
   }
 
   const auto r = d+on*(on%d*-2.0f);               // r = The half-vector
