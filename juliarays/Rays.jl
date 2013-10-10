@@ -264,7 +264,7 @@ function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
 end
 
 
-function main(megapixels::FloatingPoint, times::Integer)
+function main(megapixels::FloatingPoint, times::Integer = 1)
     @assert megapixels > 0
     size = int(sqrt(megapixels * 1e6))
     
