@@ -305,7 +305,8 @@ int main(int argc, char **argv) {
   auto& outlog = std::cerr;
 
   const CommandLine cl(argc, argv);
-  std::ifstream artFile(cl.artFilename);
+  const auto artFilename = cl.artFilename == "ART" ? (cl.home + "/" + cl.artFilename) : cl.artFilename;
+  std::ifstream artFile(artFilename);
 
   if (artFile.rdstate() & std::ifstream::failbit) {
     outlog << "Failed to open ART file" << std::endl;
