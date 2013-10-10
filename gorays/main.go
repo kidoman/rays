@@ -85,8 +85,15 @@ func (i *image) Save() {
 }
 
 type result struct {
-	Average float64   `json:"average"`
-	Samples []float64 `json:"samples"`
+	Samples []float64
+}
+
+func (r result) Average() float64 {
+	sum := 0.0
+	for _, s := range r.Samples {
+		sum += s
+	}
+	return sum / float64(len(r.Samples))
 }
 
 func (r result) Save() {
@@ -96,8 +103,16 @@ func (r result) Save() {
 	}
 	defer f.Close()
 
+	data := struct {
+		Average float64   `json:"average"`
+		Samples []float64 `json:"samples"`
+	}{
+		r.Average(),
+		r.Samples,
+	}
+
 	enc := json.NewEncoder(f)
-	enc.Encode(r)
+	enc.Encode(data)
 }
 
 var (
@@ -174,8 +189,7 @@ func main() {
 		runtime.GC()
 	}
 
-	result.Average = overallDuration / float64(*times)
-	log.Printf("Average time %v", result.Average)
+	log.Printf("Average time %v", result.Average())
 
 	result.Save()
 	img.Save()
