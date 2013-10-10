@@ -13,8 +13,8 @@ implentation that does support real threading.
 
 ## Usage
 
-    $ ruby rubyrays.rb > rubyrays.ppm
-    $ open rubyrays.ppm
+    $ ruby rubyrays.rb
+    $ open render.ppm
 
 There are three optional arguments: `width`, `height`, and `threads`.
 
