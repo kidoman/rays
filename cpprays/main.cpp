@@ -222,6 +222,14 @@ float rnd(unsigned int& seed) {
   return static_cast<float>(seed % 95) * (1.0f / 95.0f);
 }
 
+unsigned char clamp(float v) {
+  if(v > 255.0f) {
+    return 255;
+  } else {
+    return static_cast<unsigned char>(static_cast<int>(v));
+  }
+}
+
 enum class Status {
   kMissUpward,
   kMissDownward,
@@ -326,13 +334,6 @@ int main(int argc, char **argv) {
 
   const auto imageSize = static_cast<int>(sqrt(cl.megaPixels * 1000.0 * 1000.0));
   std::vector<unsigned char> bytes(3 * imageSize * imageSize);
-  const auto clamp = [](float v) -> unsigned char {
-    if(v > 255.0f) {
-      return 255;
-    } else {
-      return static_cast<unsigned char>(static_cast<int>(v));
-    }
-  };
 
   auto lambda = [&](vector a, vector b, vector c, float ar, vector orig0, unsigned int seed, int offset, int jump) {
     for (int y=offset; y<imageSize; y+=jump) {
