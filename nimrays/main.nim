@@ -38,9 +38,8 @@ block readArt:
     input: TFile
     path = "ART"
 
-  if not input.open(path, fmRead):
-    if not input.open("../" & path, fmRead):
-      raise newException(EIO, "Failed to open ART file")
+  if not (input.open(path, fmRead) or input.open("../" & path, fmRead)):
+    raise newException(EIO, "Failed to open ART file")
 
   var line = ""
   while input.readLine(line):
