@@ -44,6 +44,7 @@ block readArt:
   var line = ""
   while input.readLine(line):
     art.add(line)
+  input.close()
 
 
 # Parse Art into vector objects
