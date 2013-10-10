@@ -84,8 +84,6 @@ class Raytracer
       n = Vector::NORMAL
     end
 
-    last = nil
-
     @objects.each do |object|
       p1 = o + object
 
@@ -100,16 +98,11 @@ class Raytracer
         s = -b - Math.sqrt(q)
 
         if s < t && s > 0.01
-          last = p1
           t = s
+          n = (p1 + (d * t)).norm
           m = :hit
         end
       end
-    end
-
-    if last
-      # bouncing ray vector
-      n = (last + (d * t)).norm
     end
 
     [m, t, n]

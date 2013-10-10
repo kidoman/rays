@@ -106,11 +106,7 @@ proc tracer(o, d: TVector, t: var float, n: var TVector) : TStatus =
       if s < t and s > 0.01:
         # So far this is the minimum distance, save it. And also
         # compute the bouncing ray vector into 'n'
-        t=s; n=p; result = Hit
-
-  if result == Hit:
-    n = !(n + d * t)
-
+        t=s; n = !(p + d * t); result = Hit
 
 proc sampler(o, d: TVector, seed: var uint) : TVector =
   # Sample the world and return the pixel color for

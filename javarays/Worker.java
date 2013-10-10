@@ -58,7 +58,6 @@ final class Worker implements Runnable  {
             m = 1;
         }
 
-        RayVector last = null;
         for(int i = 0; i < objects.length; i++) {
             // There is a sphere but does the ray hits it ?
             final RayVector p1 = orig.add(objects[i]);
@@ -73,15 +72,11 @@ final class Worker implements Runnable  {
                 final float s = (float) (-b - Math.sqrt(q));
 
                 if (s < t && s > .01f) {
-                    last = p1;
                     t = s;
+                    n = (p1.add(dir.scale(t))).norm();
                     m = 2;
                 }
             }
-        }
-
-        if(last != null) {
-            n = (last.add(dir.scale(t))).norm();
         }
 
         return m;

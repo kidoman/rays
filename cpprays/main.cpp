@@ -264,14 +264,11 @@ TracerResult tracer(const Objects& objects, vector o, vector d) {
 
       if(s < tr.t && s > .01f) {
         tr.t = s;
-        tr.n = p;
+        tr.n = !(p+d*tr.t);
         tr.m = Status::kHit;
       }
     }
   }
-
-  if (tr.m == Status::kHit)
-    tr.n=!(tr.n+d*tr.t);
 
   return tr;
 }

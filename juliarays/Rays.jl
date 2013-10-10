@@ -141,16 +141,12 @@ function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
             s = -b - sqrt(q)
             if s < dist && s > 0.01
                 dist = s
-                bounce = p1
+                bounce = unit(p1 + dir * dist)
                 st = HIT
             end
         end
     end
 
-    # we hit an object, calculate the reflected ray vector
-    if st == HIT
-        bounce = unit(bounce + dir * dist)
-    end
     (st, dist, bounce)
 end
 
