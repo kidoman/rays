@@ -153,18 +153,11 @@ func main() {
 		c := a.Add(b).Scale(-256).Add(g)
 		ar := 512 / float64(size)
 
-		rows := make(chan row, size)
-
 		var wg sync.WaitGroup
 		wg.Add(*procs)
 		for i := 0; i < *procs; i++ {
-			go worker(a, b, c, ar, img, rows, &wg)
+			go worker(i).render(a, b, c, ar, img, &wg)
 		}
-
-		for y := 0; y < size; y++ {
-			rows <- row(y)
-		}
-		close(rows)
 		wg.Wait()
 
 		stopTime := time.Now()
@@ -188,7 +181,7 @@ func main() {
 	img.Save()
 }
 
-type row int
+type worker int
 
 func clamp(v float64) byte {
 	if v > 255 {
@@ -197,36 +190,33 @@ func clamp(v float64) byte {
 	return byte(v)
 }
 
-func (r row) render(a, b, c vector.Vector, ar float64, img *image, seed *uint32) {
-	k := (size - int(r) - 1) * 3 * size
-
-	for x := (size - 1); x >= 0; x-- {
-		p := vector.Vector{X: 13, Y: 13, Z: 13}
-
-		for i := 0; i < 64; i++ {
-			t := a.Scale(rnd(seed) - 0.5).Scale(99).Add(b.Scale(rnd(seed) - 0.5).Scale(99))
-			orig := vector.Vector{X: -5, Y: 16, Z: 8}.Add(t)
-			dir := t.Scale(-1).Add(a.Scale(rnd(seed) + float64(x)*ar).Add(b.Scale(rnd(seed) + float64(r)*ar)).Add(c).Scale(16)).Normalize()
-			p = sampler(orig, dir, seed).Scale(3.5).Add(p)
-		}
-
-		img.data[k] = clamp(p.X)
-		k++
-		img.data[k] = clamp(p.Y)
-		k++
-		img.data[k] = clamp(p.Z)
-		k++
-	}
-}
-
-func worker(a, b, c vector.Vector, ar float64, img *image, rows <-chan row, wg *sync.WaitGroup) {
+func (w worker) render(a, b, c vector.Vector, ar float64, img *image, wg *sync.WaitGroup) {
 	runtime.LockOSThread()
 	defer wg.Done()
 
-	seed := rand.Uint32()
+	s := rand.Uint32()
+	seed := &s
 
-	for r := range rows {
-		r.render(a, b, c, ar, img, &seed)
+	for y := int(w); y < size; y += *procs {
+		k := (size - y - 1) * 3 * size
+
+		for x := (size - 1); x >= 0; x-- {
+			p := vector.Vector{X: 13, Y: 13, Z: 13}
+
+			for i := 0; i < 64; i++ {
+				t := a.Scale(rnd(seed) - 0.5).Scale(99).Add(b.Scale(rnd(seed) - 0.5).Scale(99))
+				orig := vector.Vector{X: -5, Y: 16, Z: 8}.Add(t)
+				dir := t.Scale(-1).Add(a.Scale(rnd(seed) + float64(x)*ar).Add(b.Scale(rnd(seed) + float64(y)*ar)).Add(c).Scale(16)).Normalize()
+				p = sampler(orig, dir, seed).Scale(3.5).Add(p)
+			}
+
+			img.data[k] = clamp(p.X)
+			k++
+			img.data[k] = clamp(p.Y)
+			k++
+			img.data[k] = clamp(p.Z)
+			k++
+		}
 	}
 }
 
