@@ -13,17 +13,6 @@ import (
 	"time"
 )
 
-func rnd(s *uint32) float64 {
-	ss := *s
-	ss += ss
-	ss ^= 1
-	if int32(ss) < 0 {
-		ss ^= 0x88888eef
-	}
-	*s = ss
-	return float64(*s%95) / float64(95)
-}
-
 var (
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	mp         = flag.Float64("mp", 1.0, "megapixels of the rendered image")
@@ -35,7 +24,6 @@ var (
 	home       = flag.String("home", os.Getenv("RAYS_HOME"), "RAYS folder")
 )
 
-var objects []vector
 var size int
 
 func main() {
@@ -114,13 +102,6 @@ func main() {
 }
 
 type worker int
-
-func clamp(v float64) byte {
-	if v > 255 {
-		return 255
-	}
-	return byte(v)
-}
 
 func (w worker) render(camUp, camRight, eyeOffset vector, ar float64, img *image, wg *sync.WaitGroup) {
 	runtime.LockOSThread()

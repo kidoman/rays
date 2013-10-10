@@ -29,3 +29,5 @@ func (a art) objects() []vector {
 
 	return objects
 }
+
+var objects []vector
