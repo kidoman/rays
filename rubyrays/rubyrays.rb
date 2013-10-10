@@ -4,6 +4,7 @@ require_relative 'art'
 require_relative 'camera'
 require_relative 'image'
 require_relative 'raytracer'
+require_relative 'result'
 
 def processor_count
   case RbConfig::CONFIG['host_os']
@@ -28,6 +29,7 @@ options = {
   times: 1,
   procs: processor_count,
   output: 'render.ppm',
+  result: 'result.json',
   art: 'ART',
   home: ENV['RAYS_HOME']
 }
@@ -55,6 +57,11 @@ OptionParser.new do |o|
     options[:output] = v
   end
 
+  o.on '-r', '--result <string>',
+      "Result file to write the benchmark data to [#{options[:result]}]" do |v|
+    options[:result] = v
+  end
+
   o.on '-a', '--art <string>',
       "Art file to use for rendering [#{options[:art]}]" do |v|
     options[:art] = v
@@ -68,11 +75,13 @@ end.parse!
 
 size = Math.sqrt(options[:megapixels] * 1000000).to_i
 aspect_ratio = 512.0 / size
+art = Art.from_file(options[:art] == 'ART' ? File.join(options[:home], options[:art]) : options[:art])
+image = Image.new(size, size)
+raytracer = Raytracer.new(art.to_objects)
+result = Result.new
 
 options[:times].times do
-  art = Art.from_file(File.join(options[:home], options[:art]))
-  raytracer = Raytracer.new(art.to_objects)
-  image = Image.new(size, size)
+  start_time = Time.now
 
   Array.new(options[:procs]) do |id|
     Thread.new do
@@ -110,9 +119,14 @@ options[:times].times do
     end
   end.each(&:join)
 
-  if options[:output] == '-'
-    puts image.to_ppm
-  else
-    image.save(options[:output])
-  end
+  end_time = Time.now
+  result.record(end_time - start_time)
+end
+
+result.save(options[:result])
+
+if options[:output] == '-'
+  puts image.to_ppm
+else
+  image.save(options[:output])
 end
