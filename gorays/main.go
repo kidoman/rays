@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bufio"
-	"encoding/json"
 	"flag"
-	"fmt"
 	"github.com/kid0m4n/rays/gorays/vector"
 	"log"
 	"math"
@@ -17,40 +14,6 @@ import (
 	"time"
 )
 
-type art []string
-
-func readArt() art {
-	if *artfile == "ART" {
-		*artfile = path.Join(*home, *artfile)
-	}
-	f, err := os.Open(*artfile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	a := make(art, 0)
-	for scanner.Scan() {
-		a = append(a, scanner.Text())
-	}
-
-	return a
-}
-
-func (a art) objects() []vector.Vector {
-	objects := make([]vector.Vector, 0)
-	for j, line := range a {
-		for k, column := range line {
-			if column != ' ' {
-				objects = append(objects, vector.Vector{X: float64(k), Y: 6.5, Z: -float64(len(a)-j) - 1})
-			}
-		}
-	}
-
-	return objects
-}
-
 func rnd(s *uint32) float64 {
 	ss := *s
 	ss += ss
@@ -60,59 +23,6 @@ func rnd(s *uint32) float64 {
 	}
 	*s = ss
 	return float64(*s%95) / float64(95)
-}
-
-type image struct {
-	size int
-	data []byte
-}
-
-func newImage(size int) *image {
-	return &image{size: size, data: make([]byte, 3*size*size)}
-}
-
-func (i *image) Save() {
-	f, err := os.Create(*outputfile)
-	if err != nil {
-		log.Panic(err)
-	}
-	defer f.Close()
-
-	fmt.Fprintf(f, "P6 %v %v 255 ", i.size, i.size)
-	if _, err := f.Write(i.data); err != nil {
-		log.Panic(err)
-	}
-}
-
-type result struct {
-	Samples []float64
-}
-
-func (r result) Average() float64 {
-	sum := 0.0
-	for _, s := range r.Samples {
-		sum += s
-	}
-	return sum / float64(len(r.Samples))
-}
-
-func (r result) Save() {
-	f, err := os.Create(*resultfile)
-	if err != nil {
-		log.Panic(err)
-	}
-	defer f.Close()
-
-	data := struct {
-		Average float64   `json:"average"`
-		Samples []float64 `json:"samples"`
-	}{
-		r.Average(),
-		r.Samples,
-	}
-
-	enc := json.NewEncoder(f)
-	enc.Encode(data)
 }
 
 var (
@@ -148,7 +58,16 @@ func main() {
 		log.Fatalf("procs (%v) needs to be >= 1", *procs)
 	}
 
-	ar := readArt()
+	if *artfile == "ART" {
+		*artfile = path.Join(*home, *artfile)
+	}
+	f, err := os.Open(*artfile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	ar := readArt(f)
 	objects = ar.objects()
 
 	var result result
