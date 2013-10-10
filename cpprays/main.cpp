@@ -310,6 +310,42 @@ vector sampler(const Objects& objects, vector o,vector d, unsigned int& seed) {
   return vector(p,p,p)+sampler(objects, h,r,seed)*.5f;
 }
 
+void worker(unsigned char* dst, int imageSize, Objects& objects, unsigned int seed, int offset, int jump) {
+  const auto g = !vector(-3.1f, -16.f, 1.9f);
+  const auto a = !(vector(0.0f, 0.0f, 1.0f)^g) * .002f;
+  const auto b = !(g^a)*.002f;
+  const auto c = (a+b)*-256.0f+g;
+  const auto ar = 512.0f / static_cast<float>(imageSize);
+  const auto orig0 = vector(-5.0f, 16.0f, 8.0f);
+
+  for (int y=offset; y<imageSize; y+=jump) {
+    int k = (imageSize - y - 1) * imageSize * 3;
+
+    for(int x=imageSize;x--;) {
+      vector p(13.0f,13.0f,13.0f);
+
+      for(int r=64;r--;) {
+        const auto t = a*((rnd(seed)-.5f)*99.0f) + b*((rnd(seed)-.5f)*99.0f);
+
+        const auto orig = orig0 + t;
+        const auto js = 16.0f;
+        const auto jt = -1.0f;
+        const auto ja = js * (static_cast<float>(x) * ar + rnd(seed));
+        const auto jb = js * (static_cast<float>(y) * ar + rnd(seed));
+        const auto jc = js;
+        const auto dir = !(t*jt + a*ja + b*jb + c*jc);
+
+        const auto s = sampler(objects, orig, dir, seed);
+        p = s * 3.5f + p;
+      }
+
+      dst[k++] = clamp(p.x());
+      dst[k++] = clamp(p.y());
+      dst[k++] = clamp(p.z());
+    }
+  }
+}
+
 int main(int argc, char **argv) {
   auto& outlog = std::cerr;
 
@@ -335,53 +371,18 @@ int main(int argc, char **argv) {
   const auto imageSize = static_cast<int>(sqrt(cl.megaPixels * 1000.0 * 1000.0));
   std::vector<unsigned char> bytes(3 * imageSize * imageSize);
 
-  auto lambda = [&](vector a, vector b, vector c, float ar, vector orig0, unsigned int seed, int offset, int jump) {
-    for (int y=offset; y<imageSize; y+=jump) {
-      int k = (imageSize - y - 1) * imageSize * 3;
-
-      for(int x=imageSize;x--;) {
-        vector p(13.0f,13.0f,13.0f);
-
-        for(int r=64;r--;) {
-          const auto t = a*((rnd(seed)-.5f)*99.0f) + b*((rnd(seed)-.5f)*99.0f);
-
-          const auto orig = orig0 + t;
-          const auto js = 16.0f;
-          const auto jt = -1.0f;
-          const auto ja = js * (static_cast<float>(x) * ar + rnd(seed));
-          const auto jb = js * (static_cast<float>(y) * ar + rnd(seed));
-          const auto jc = js;
-          const auto dir = !(t*jt + a*ja + b*jb + c*jc);
-
-          const auto s = sampler(objects, orig, dir, seed);
-          p = s * 3.5f + p;
-        }
-
-        bytes[k++] = clamp(p.x());
-        bytes[k++] = clamp(p.y());
-        bytes[k++] = clamp(p.z());
-      }
-    }
-  };
-
   for(int iTimes = 0; iTimes < cl.times; ++iTimes) {
     const auto t0 = Clock::now();
-
-    const auto g = !vector(-3.1f, -16.f, 1.9f);
-    const auto a = !(vector(0.0f, 0.0f, 1.0f)^g) * .002f;
-    const auto b = !(g^a)*.002f;
-    const auto c = (a+b)*-256.0f+g;
-    const auto ar = 512.0f / static_cast<float>(imageSize);
-    const auto orig0 = vector(-5.0f, 16.0f, 8.0f);
 
     std::mt19937 rgen;
     std::vector<std::thread> threads;
     for(int i = 0; i < cl.procs; ++i) {
-      threads.emplace_back(lambda, a, b, c, ar, orig0, rgen(), i, cl.procs);
+      threads.emplace_back(worker, bytes.data(), imageSize, objects, rgen(), i, cl.procs);
     }
     for(auto& t : threads) {
       t.join();
     }
+
     const auto t1 = Clock::now();
     result.samples[iTimes] = static_cast<ClockSec>(t1 - t0).count();
     outlog << "Time taken for render " << result.samples[iTimes] << "s" << std::endl;
