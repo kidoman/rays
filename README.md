@@ -81,6 +81,7 @@ We currently have implementations from:
   * Java (thanks to Tobias Kalbitz)
   * Ruby (thanks to Michael Macias)
   * Julia (thanks to Jake Bolewski)
+  * Nimrod (thanks to Erik O'Leary)
 
 Please refer to individual README files in the specific folders to find out instructions on how to run the specific benchmark.
 
@@ -108,5 +109,6 @@ The following have contributed to the project one way or the other:
   * [Lee Baker](https://github.com/leecbaker)
   * [Michael Macias](https://github.com/zaeleus)
   * [Jake Bolewski](https://github.com/jakebolewski)
+  * [Erik O'Leary](https://github.com/onionhammer)
 
 Thanks to everyone for all the help given :)
