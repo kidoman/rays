@@ -140,7 +140,7 @@ struct CommandLine {
       { "-home", [this](Arg v) { home = v; } }
     };
 
-    const std::string delim = "=";
+    const auto delim = '=';
     for(int i = 1; i < argc; ++i) {
       const auto arg = std::string { argv[i] };
       const auto pos = arg.find(delim);
