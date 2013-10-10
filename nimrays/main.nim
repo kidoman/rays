@@ -179,11 +179,11 @@ if num_threads == 0:
   num_threads = 8
 
 let params = paramCount()
-if params > 1:
+if params > 0:
   megaPixels = parseInt(paramStr(1))
-if params > 2:
+if params > 1:
   iterations = parseInt(paramStr(2))
-if params > 3:
+if params > 2:
   num_threads = parseInt(paramStr(3))
 
 let imageSize = int(sqrt(float(megaPixels) * 1000.0 * 1000.0))
