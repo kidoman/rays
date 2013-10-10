@@ -5,7 +5,7 @@ import os, osproc
 import times
 
 # Define a vector class with constructor and operator: 'v'
-type 
+type
   TVector  = tuple[x, y, z: float]
 
 proc `+`(this, r: TVector) : TVector =
@@ -31,8 +31,7 @@ proc `!`(this: TVector) : TVector =
 type TStatus = enum
   MissUpward, MissDownward, Hit
 
-
-let art = [ 
+let art = [
   " 11111           1    ",
   " 1    1         1 1   ",
   " 1     1       1   1  ",
@@ -68,26 +67,20 @@ for line in art:
   for c in line:
     if c != ' ':
       objects.add((x, oy, z))
-      
+
     x += 1.0
   z += 1.0
-
 
 proc rnd(seed: var uint) : float =
   seed = (seed + seed) xor 1
 
   if int(seed) < 0:
     seed = seed xor uint(0x88888eef)
-  
+
   return float(seed mod 95) * (1.0 / 95.0)
 
-
 proc tracer(o, d: TVector, t: var float, n: var TVector) : TStatus =
-  # The intersection test for line [o,v].
-  # Return 2 if a hit was found (and also return distance t and bouncing ray n).
-  # Return 0 if no hit was found but ray goes upward
-  # Return 1 if no hit was found but ray goes downward
-  t = 1e9
+  t = 1000000000
   result = MissUpward
   var p = -o.z / d.z
 
@@ -137,7 +130,7 @@ proc sampler(o, d: TVector, seed: var uint) : TVector =
     return (1.0, 1.0, 1.0) * p
 
   # A sphere was maybe hit.
-  var 
+  var
     h = o + d * t # h = intersection coordinate
     l = !((9.0 + rnd(seed), 9.0 + rnd(seed), 16.0) + h * -1) # 'l' = direction to light (with random delta for soft-shadows).
     b = l % n # Calculated the lambertian factor
@@ -148,7 +141,7 @@ proc sampler(o, d: TVector, seed: var uint) : TVector =
 
   if m == MissDownward:
     h = h * 0.2 # No sphere was hit and the ray was going downward: Generate a floor color
-    
+
     return
       if (int(ceil(h.x) + ceil(h.y)) and 1) == 1: (3.0, 1.0, 1.0) * (b * 0.2 + 0.1)
       else: (3.0, 3.0, 3.0) * (b * 0.2 + 0.1)
@@ -196,7 +189,7 @@ if params > 3:
 let imageSize = int(sqrt(float(megaPixels) * 1000.0 * 1000.0))
 
 # The '!' are for normalizing each vectors with ! operator.
-var 
+var
   g  = !(-3.1, -16.0, 1.9)           # Camera direction
   a  = !((0.0, 0.0, 1.0)^g) * 0.002  # Camera up vector...Seem Z is pointing up :/ WTF !
   b  = !(g^a) * 0.002                # The right vector, obtained via traditional cross-product
@@ -206,12 +199,12 @@ var
 
 let clockBegin = cpuTime()
 
-var bytes = newSeq[char](3 * imageSize * imageSize) 
+var bytes = newSeq[char](3 * imageSize * imageSize)
 
 type TWorkerArgs = tuple[seed: uint, offset, jump: int]
 
-proc worker(args: TWorkerArgs) {.thread.} = 
-  var 
+proc worker(args: TWorkerArgs) {.thread.} =
+  var
     seed   = args.seed
     offset = args.offset
     jump   = args.jump
@@ -250,15 +243,15 @@ var threads = newSeq[TThread[TWorkerArgs]](num_threads)
 for i in 0 .. num_threads-1:
   createThread(
     threads[i],
-    worker, 
-    (uint(math.random(high(int))), i, num_threads)
+    worker,
+    (uint(i), i, num_threads)
   )
 
 echo "Running..."
 
 joinThreads(threads)
 
-echo "Average time taken ", formatFloat(cpuTime() - clockBegin, ffDecimal, precision = 3), "s"  
+echo "Average time taken ", formatFloat(cpuTime() - clockBegin, ffDecimal, precision = 3), "s"
 
 var output: TFile
 if output.open("render.ppm", fmWrite):
