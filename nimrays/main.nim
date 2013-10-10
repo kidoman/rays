@@ -3,6 +3,7 @@ import unsigned
 import strutils
 import os, osproc
 import times
+import json
 
 # Define a vector class with constructor and operator: 'v'
 type
@@ -197,7 +198,6 @@ var
   ar = 512.0 / float(imageSize)
   orig0 : TVector = (-5.0, 16.0, 8.0)
 
-let clockBegin = cpuTime()
 
 var bytes = newSeq[char](3 * imageSize * imageSize)
 
@@ -237,21 +237,42 @@ proc worker(args: TWorkerArgs) {.thread.} =
       bytes[k] = clamp(p.y); inc(k)
       bytes[k] = clamp(p.z); inc(k)
 
+var samples = newSeq[float](iterations)
+var totalTime = 0.0
 
-var threads = newSeq[TThread[TWorkerArgs]](num_threads)
+echo "Running ", iterations, " iterations"
 
-for i in 0 .. num_threads-1:
-  createThread(
-    threads[i],
-    worker,
-    (uint(i), i, num_threads)
-  )
+for t in 0 .. iterations-1:
+  echo "Running... ", t+1
+  var threads = newSeq[TThread[TWorkerArgs]](num_threads)
 
-echo "Running..."
+  let clockBegin = epochTime()
 
-joinThreads(threads)
+  for i in 0 .. num_threads-1:
+    createThread(
+      threads[i],
+      worker,
+      (uint(math.random(high(int))), i, num_threads)
+    )
 
-echo "Average time taken ", formatFloat(cpuTime() - clockBegin, ffDecimal, precision = 3), "s"
+  joinThreads(threads)
+
+  let timeTaken = epochTime() - clockBegin
+  samples[t] = timeTaken
+  totalTime += timeTaken
+
+  echo "Time taken ", formatFloat(timeTaken, ffDecimal, precision = 3)
+
+let averageTime = totalTime / float(iterations)
+echo "Average time taken ", formatFloat(averageTime, ffDecimal, precision = 3), "s"
+
+var result: TFile
+if result.open("result.json", fmWrite):
+  let res = %{"average": %formatFloat(averageTime, ffDecimal, precision = 3)}
+  res["samples"] = newJArray()
+  for s in samples:
+    add(res["samples"], %formatFloat(s, ffDecimal, precision = 3))
+  write(result, $res)
 
 var output: TFile
 if output.open("render.ppm", fmWrite):
