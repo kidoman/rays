@@ -3,6 +3,7 @@ import unsigned
 import strutils
 import os, osproc
 import times
+import json
 
 type 
   TVector = tuple[x, y, z: float]
@@ -173,11 +174,11 @@ if num_threads == 0:
   num_threads = 8
 
 let params = paramCount()
-if params > 1:
+if params > 0:
   megaPixels = parseInt(paramStr(1))
-if params > 2:
+if params > 1:
   iterations = parseInt(paramStr(2))
-if params > 3:
+if params > 2:
   num_threads = parseInt(paramStr(3))
 
 let imageSize = int(sqrt(float(megaPixels) * 1000.0 * 1000.0))
@@ -190,7 +191,6 @@ var
   ar    = 512.0 / float(imageSize)
   orig0 = (-5.0, 16.0, 8.0)
 
-let clockBegin = cpuTime()
 
 var bytes = newSeq[char](3 * imageSize * imageSize) 
 
@@ -225,21 +225,43 @@ proc worker(args: TWorkerArgs) {.thread.} =
       bytes[k] = clamp(p.y); inc(k)
       bytes[k] = clamp(p.z); inc(k)
 
+var samples = newSeq[float](iterations)
+var totalTime = 0.0
 
-var threads = newSeq[TThread[TWorkerArgs]](num_threads)
+echo "Running ", iterations, " iterations"
 
-for i in 0 .. num_threads-1:
-  createThread(
-    threads[i],
-    worker, 
-    (uint(math.random(high(int))), i, num_threads)
-  )
+for t in 0 .. iterations-1:
+  echo "Running... ", t+1
+  var threads = newSeq[TThread[TWorkerArgs]](num_threads)
 
-echo "Running..."
+  let clockBegin = cpuTime()
 
-joinThreads(threads)
+  for i in 0 .. num_threads-1:
+    createThread(
+      threads[i],
+      worker,
+      (uint(math.random(high(int))), i, num_threads)
+    )
 
-echo "Average time taken ", formatFloat(cpuTime() - clockBegin, ffDecimal, precision = 3), "s"  
+  joinThreads(threads)
+
+  let timeTaken = cpuTime() - clockBegin
+  samples[t] = timeTaken
+  totalTime += timeTaken
+
+  echo "Time taken ", formatFloat(timeTaken, ffDecimal, precision = 3)
+
+let averageTime = totalTime / float(iterations)
+echo "Average time taken ", formatFloat(averageTime, ffDecimal, precision = 3), "s"
+
+var result: TFile
+if result.open("result.json", fmWrite):
+  let res = %{"average": %formatFloat(averageTime, ffDecimal, precision = 3)}
+  res["samples"] = newJArray()
+  for s in samples:
+    res["samples"].add(%formatFloat(s, ffDecimal, precision = 3))
+  write(result, $res)
+  result.close()
 
 var output: TFile
 if output.open("render.ppm", fmWrite):
