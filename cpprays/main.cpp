@@ -306,6 +306,12 @@ int main(int argc, char **argv) {
 
   const CommandLine cl(argc, argv);
   std::ifstream artFile(cl.artFilename);
+
+  if (artFile.rdstate() & std::ifstream::failbit) {
+    outlog << "Failed to open ART file" << std::endl;
+    std::exit(1);
+  }
+
   const auto art = readArt(artFile);
   const auto objects = makeObjects(art);
   Result result(cl.times);
