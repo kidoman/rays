@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"github.com/kid0m4n/rays/gorays/vector"
 	"log"
 	"math"
 	"math/rand"
@@ -36,7 +35,7 @@ var (
 	home       = flag.String("home", os.Getenv("RAYS_HOME"), "RAYS folder")
 )
 
-var objects []vector.Vector
+var objects []vector
 var size int
 
 func main() {
@@ -81,8 +80,8 @@ func main() {
 		runtime.ReadMemStats(&beforeMemstats)
 		startTime := time.Now()
 
-		g := vector.Vector{X: -3.1, Y: -16, Z: 1.9}.Normalize()
-		a := vector.Vector{X: 0, Y: 0, Z: 1}.CrossProduct(g).Normalize().Scale(0.002)
+		g := vector{X: -3.1, Y: -16, Z: 1.9}.Normalize()
+		a := vector{X: 0, Y: 0, Z: 1}.CrossProduct(g).Normalize().Scale(0.002)
 		b := g.CrossProduct(a).Normalize().Scale(0.002)
 		c := a.Add(b).Scale(-256).Add(g)
 		ar := 512 / float64(size)
@@ -123,7 +122,7 @@ func clamp(v float64) byte {
 	return byte(v)
 }
 
-func (w worker) render(a, b, c vector.Vector, ar float64, img *image, wg *sync.WaitGroup) {
+func (w worker) render(a, b, c vector, ar float64, img *image, wg *sync.WaitGroup) {
 	runtime.LockOSThread()
 	defer wg.Done()
 
@@ -134,11 +133,11 @@ func (w worker) render(a, b, c vector.Vector, ar float64, img *image, wg *sync.W
 		k := (size - y - 1) * 3 * size
 
 		for x := (size - 1); x >= 0; x-- {
-			p := vector.Vector{X: 13, Y: 13, Z: 13}
+			p := vector{X: 13, Y: 13, Z: 13}
 
 			for i := 0; i < 64; i++ {
 				t := a.Scale(rnd(seed) - 0.5).Scale(99).Add(b.Scale(rnd(seed) - 0.5).Scale(99))
-				orig := vector.Vector{X: -5, Y: 16, Z: 8}.Add(t)
+				orig := vector{X: -5, Y: 16, Z: 8}.Add(t)
 				dir := t.Scale(-1).Add(a.Scale(rnd(seed) + float64(x)*ar).Add(b.Scale(rnd(seed) + float64(y)*ar)).Add(c).Scale(16)).Normalize()
 				p = sampler(orig, dir, seed).Scale(3.5).Add(p)
 			}
@@ -153,17 +152,17 @@ func (w worker) render(a, b, c vector.Vector, ar float64, img *image, wg *sync.W
 	}
 }
 
-func sampler(orig, dir vector.Vector, seed *uint32) vector.Vector {
+func sampler(orig, dir vector, seed *uint32) vector {
 	st, dist, bounce := tracer(orig, dir)
 	obounce := bounce
 
 	if st == missUpward {
 		p := 1 - dir.Z
-		return vector.Vector{X: 1, Y: 1, Z: 1}.Scale(p)
+		return vector{X: 1, Y: 1, Z: 1}.Scale(p)
 	}
 
 	h := orig.Add(dir.Scale(dist))
-	l := vector.Vector{X: 9 + rnd(seed), Y: 9 + rnd(seed), Z: 16}.Add(h.Scale(-1)).Normalize()
+	l := vector{X: 9 + rnd(seed), Y: 9 + rnd(seed), Z: 16}.Add(h.Scale(-1)).Normalize()
 
 	b := l.DotProduct(bounce)
 
@@ -181,9 +180,9 @@ func sampler(orig, dir vector.Vector, seed *uint32) vector.Vector {
 
 	if st == missDownward {
 		h = h.Scale(0.2)
-		fc := vector.Vector{X: 3, Y: 3, Z: 3}
+		fc := vector{X: 3, Y: 3, Z: 3}
 		if int(math.Ceil(h.X)+math.Ceil(h.Y))&1 == 1 {
-			fc = vector.Vector{X: 3, Y: 1, Z: 1}
+			fc = vector{X: 3, Y: 1, Z: 1}
 		}
 		return fc.Scale(b*0.2 + 0.1)
 	}
@@ -199,7 +198,7 @@ func sampler(orig, dir vector.Vector, seed *uint32) vector.Vector {
 	p33 = p33 * p   // p ** 33
 	p = p33 * p33 * p33
 
-	return vector.Vector{X: p, Y: p, Z: p}.Add(sampler(h, r, seed).Scale(0.5))
+	return vector{X: p, Y: p, Z: p}.Add(sampler(h, r, seed).Scale(0.5))
 }
 
 type status int
@@ -210,13 +209,13 @@ const (
 	hit
 )
 
-func tracer(orig, dir vector.Vector) (st status, dist float64, bounce vector.Vector) {
+func tracer(orig, dir vector) (st status, dist float64, bounce vector) {
 	dist = 1e9
 	st = missUpward
 	p := -orig.Z / dir.Z
 	if 0.01 < p {
 		dist = p
-		bounce = vector.Vector{X: 0, Y: 0, Z: 1}
+		bounce = vector{X: 0, Y: 0, Z: 1}
 		st = missDownward
 	}
 
