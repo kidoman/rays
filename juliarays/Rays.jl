@@ -248,6 +248,12 @@ function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
     end
 end
 
+function test()
+    id = myid()
+    np = nprocs()
+    println("hello from process $id of $np")
+
+end
 
 function main(megapixels::FloatingPoint, times::Integer = 1)
     @assert megapixels > 0
@@ -265,9 +271,13 @@ function main(megapixels::FloatingPoint, times::Integer = 1)
 end
 end
 
-nargs = length(ARGS)
-if nargs     == 0 Rays.main(1.0)
-elseif nargs == 1 Rays.main(float(ARGS[1]))
-elseif nargs == 2 Rays.main(float(ARGS[1]), int(ARGS[2]))
-else println("Error: too many arguments")
-end
+#require("Rays.jl")
+#@everywhere Rays.test()
+
+
+#nargs = length(ARGS)
+#if nargs     == 0 Rays.main(1.0)
+#elseif nargs == 1 Rays.main(float(ARGS[1]))
+#elseif nargs == 2 Rays.main(float(ARGS[1]), int(ARGS[2]))
+#else println("Error: too many arguments")
+#end
