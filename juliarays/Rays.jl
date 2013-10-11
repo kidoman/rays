@@ -35,6 +35,8 @@ immutable RGB{T<:Real}
     b :: T
 end
 
+RGB{T}(r::T, g::T, b::T) = RGB(convert(T, r), convert(T, g), convert(T, b))
+
 # implement write function for pixel type (called when writing pixel array to STDOUT)
 Base.write(s::IO, pix::RGB) = begin n = 0
                                     n += write(s, pix.r)
