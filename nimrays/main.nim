@@ -4,6 +4,7 @@ import strutils
 import os, osproc
 import times
 import json
+import sequtils
 
 type 
   TVector = tuple[x, y, z: float]
@@ -33,19 +34,15 @@ type TStatus = enum
 
 
 # Read Art from ART file
-var art = newSeq[string]()
-block readArt:
-  var
-    input: TFile
-    path = "ART"
+var
+  input: TFile
+  path = "ART"
 
-  if not (input.open(path, fmRead) or input.open("../" & path, fmRead)):
-    raise newException(EIO, "Failed to open ART file")
+if not (input.open(path, fmRead) or input.open("../" & path, fmRead)):
+  raise newException(EIO, "Failed to open ART file")
 
-  var line = ""
-  while input.readLine(line):
-    art.add(line)
-  input.close()
+let art = toSeq(lines(input))
+input.close()
 
 
 # Parse Art into objects
