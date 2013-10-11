@@ -6,8 +6,7 @@ import times
 import json
 import sequtils
 
-type 
-  TVector = tuple[x, y, z: float]
+type TVector = tuple[x, y, z: float]
 
 proc `+`(this, r: TVector) : TVector =
   # Vector add
