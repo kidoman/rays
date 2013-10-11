@@ -197,16 +197,7 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
 
     # calculate the color p with diffuse and specular component
     p = dot(l, r * (b > 0.0 ? 1.0 : 0.0))
-
-    #p ^= 33
-    # only slightly faster (~%5) on my computer
-    p33 = p * p
-    p33 = p33 * p33
-    p33 = p33 * p33
-    p33 = p33 * p33
-    p33 = p33 * p33
-    p33 = p33 * p
-    p = p33 * p33 * p33
+    p ^= 99
 
     # st == HIT a sphere was hit. cast a ray bouncing from sphere surface
     return RGB{T}(p, p, p) + sample_world(h, r) * 0.5

@@ -120,14 +120,7 @@ final class Worker implements Runnable  {
         final RayVector r = dir.add(on.scale(on.dot(dir.scale(-2.f)))); // r = The half-vector
 
         // Calculate the color 'p' with diffuse and specular component
-        float p = l.dot(r.scale(b > 0 ? 1.f : 0.f));
-        float p33 = p * p;
-        p33 = p33 * p33;
-        p33 = p33 * p33;
-        p33 = p33 * p33;
-        p33 = p33 * p33;
-        p33 = p33 * p;
-        p = p33 * p33 * p33;
+        float p = (float)Math.pow(l.dot(r.scale(b > 0 ? 1.f : 0.f)), 99.0);
 
         // m == 2 A sphere was hit. Cast an ray bouncing from the sphere surface.
         // Attenuate color by 50% since it is bouncing (*.5)

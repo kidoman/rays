@@ -81,15 +81,7 @@ func sampler(orig, dir vector, seed *uint32) vector {
 	}
 
 	r := dir.Add(obounce.Scale(obounce.DotProduct(dir.Scale(-2))))
-
-	p := l.DotProduct(r.Scale(sf))
-	p33 := p * p    // p ** 2
-	p33 = p33 * p33 // p ** 4
-	p33 = p33 * p33 // p ** 8
-	p33 = p33 * p33 // p ** 16
-	p33 = p33 * p33 // p ** 32
-	p33 = p33 * p   // p ** 33
-	p = p33 * p33 * p33
+	p := math.Pow(l.DotProduct(r.Scale(sf)), 99)
 
 	return vector{X: p, Y: p, Z: p}.Add(sampler(h, r, seed).Scale(0.5))
 }

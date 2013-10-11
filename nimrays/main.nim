@@ -31,7 +31,6 @@ proc `!`(this: TVector) : TVector =
 type TStatus = enum
   MissUpward, MissDownward, Hit
 
-
 # Read Art from ART file
 var
   input: TFile
@@ -43,35 +42,31 @@ if not (input.open(path, fmRead) or input.open("../" & path, fmRead)):
 let art = toSeq(lines(input))
 input.close()
 
-
 # Parse Art into objects
 var objects = newSeq[TVector]()
-block makeObjects:
-  var
-    ox = 0.0
-    oy = 6.5
-    oz = -1.0
-    z  = oz - float(len(art))
 
-  for line in art:
+var
+  ox = 0.0
+  oy = 6.5
+  oz = -1.0
+  z  = oz - float(len(art))
 
-    var x = ox
-    for c in line:
-      if c != ' ':
-        objects.add((x, oy, z))
-        
-      x += 1.0
-    z += 1.0
+for line in art:
+  var x = ox
+  for c in line:
+    if c != ' ':
+      objects.add((x, oy, z))
 
+    x += 1.0
+  z += 1.0
 
 proc rnd(seed: var uint) : float =
   seed = (seed + seed) xor 1
 
   if int(seed) < 0:
     seed = seed xor uint(0x88888eef)
-  
-  return float(seed mod 95) * (1.0 / 95.0)
 
+  return float(seed mod 95) * (1.0 / 95.0)
 
 proc tracer(o, d: TVector, t: var float, n: var TVector) : TStatus =
   # The intersection test for line [o,d].
@@ -131,7 +126,7 @@ proc sampler(o, d: TVector, seed: var uint) : TVector =
 
   if m == MissDownward:
     h = h * 0.2 # No sphere was hit and the ray was going downward: Generate a floor color
-    
+
     return
       if (int(ceil(h.x) + ceil(h.y)) and 1) == 1: (3.0, 1.0, 1.0) * (b * 0.2 + 0.1)
       else: (3.0, 3.0, 3.0) * (b * 0.2 + 0.1)
@@ -140,21 +135,13 @@ proc sampler(o, d: TVector, seed: var uint) : TVector =
 
   # Calculate the color 'p' with diffuse and specular component
   var p = l % r * (if b > 0: 1 else: 0)
-  var p33 = p * p
-  p33 = p33 * p33
-  p33 = p33 * p33
-  p33 = p33 * p33
-  p33 = p33 * p33
-  p33 = p33 * p
-  p = p33 * p33 * p33
+  p = pow(p, 99)
 
   return (p, p, p) + sampler(h, r, seed) * 0.5
-
 
 template clamp(v: float) : char =
   if v > 255.0: char(255)
   else: char(v)
-
 
 ## Main Entry Point
 var
@@ -175,7 +162,7 @@ if params > 2:
 
 let imageSize = int(sqrt(float(megaPixels) * 1000.0 * 1000.0))
 
-var 
+var
   g     = !(-3.1, -16.0, 1.9)           # Camera direction
   a     = !((0.0, 0.0, 1.0)^g) * 0.002  # Camera up vector
   b     = !(g^a) * 0.002                # The right vector, obtained via traditional cross-product
@@ -183,12 +170,11 @@ var
   ar    = 512.0 / float(imageSize)
   orig0 = (-5.0, 16.0, 8.0)
 
-
-var bytes = newSeq[char](3 * imageSize * imageSize) 
+var bytes = newSeq[char](3 * imageSize * imageSize)
 
 type TWorkerArgs = tuple[seed: uint, offset, jump: int]
-proc worker(args: TWorkerArgs) {.thread.} = 
-  var 
+proc worker(args: TWorkerArgs) {.thread.} =
+  var
     seed   = args.seed
     offset = args.offset
     jump   = args.jump

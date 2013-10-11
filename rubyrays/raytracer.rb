@@ -56,13 +56,7 @@ class Raytracer
 
     # color with diffuse and specular components
     p = l.dot(r * (b > 0 ? 1 : 0))
-    p33 = p * p
-    p33 = p33 * p33
-    p33 = p33 * p33
-    p33 = p33 * p33
-    p33 = p33 * p33
-    p33 = p33 * p
-    p = p33 * p33 * p33
+    p = p ** 99
 
     # a sphere was hit; cast a ray bouncing from the sphere surface
     # and attenuate the color by 50%
