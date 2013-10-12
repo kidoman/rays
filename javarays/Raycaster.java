@@ -6,43 +6,27 @@ import java.util.Vector;
 
 public final class Raycaster {
 
-    private final static char[][] art = {
-        " 11111           1    ".toCharArray(),
-        " 1    1         1 1   ".toCharArray(),
-        " 1     1       1   1  ".toCharArray(),
-        " 1     1      1     1 ".toCharArray(),
-        " 1    11     1       1".toCharArray(),
-        " 11111       111111111".toCharArray(),
-        " 1    1      1       1".toCharArray(),
-        " 1     1     1       1".toCharArray(),
-        " 1      1    1       1".toCharArray(),
-        "                      ".toCharArray(),
-        "1         1    11111  ".toCharArray(),
-        " 1       1    1       ".toCharArray(),
-        "  1     1    1        ".toCharArray(),
-        "   1   1     1        ".toCharArray(),
-        "    1 1       111111  ".toCharArray(),
-        "     1              1 ".toCharArray(),
-        "     1              1 ".toCharArray(),
-        "     1             1  ".toCharArray(),
-        "     1        111111  ".toCharArray()
+    private final static String[] art = {
+        " 11111           1    ",
+        " 1    1         1 1   ",
+        " 1     1       1   1  ",
+        " 1     1      1     1 ",
+        " 1    11     1       1",
+        " 11111       111111111",
+        " 1    1      1       1",
+        " 1     1     1       1",
+        " 1      1    1       1",
+        "                      ",
+        "1         1    11111  ",
+        " 1       1    1       ",
+        "  1     1    1        ",
+        "   1   1     1        ",
+        "    1 1       111111  ",
+        "     1              1 ",
+        "     1              1 ",
+        "     1             1  ",
+        "     1        111111  "
     };
-
-    static private RayVector[] buildObjects() {
-        final Vector<RayVector> tmp = new Vector<>(art.length * art[0].length);
-
-        final int nr = art.length;
-        for (int j = 0; j < nr; j++) {
-            final int nc = art[j].length;
-            for (int k = 0; k < nc; k++) {
-                if (art[j][k] != ' ') {
-                    tmp.add(new RayVector(k, 6.5f, -(nr - j) - 1.0f));
-                }
-            }
-        }
-
-        return tmp.toArray(new RayVector[0]);
-    }
 
     static int size = 512;
     static byte[] bytes;
@@ -112,7 +96,7 @@ public final class Raycaster {
 
     public static void main(final String[] args) throws Exception {
         parseArgs(args);
-        final RayVector[] objects = buildObjects();
+        final RayVector[] objects = Art.createFromStrings(art);
         bytes = new byte[3*size*size];
 
         long overallDuration= 0;
