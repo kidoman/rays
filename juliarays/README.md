@@ -20,5 +20,5 @@ For all options:
 
 Profiling can be enabled with the --profile switch.
 A more detailed profile can be obtained with the --cprofile switch.
-Profiling is only enabled when the number of benchmark repeats is greater than 1 (-t switch)..
+Profiling can be enabled when the number of benchmark repeats is > 1.
 
