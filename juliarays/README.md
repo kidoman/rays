@@ -10,7 +10,7 @@
     $ open juliarays.ppm
 
 [nprocs] is the total number of process to spawn.
-Julia defines "master" and "worker" processes so [nprocs] - 1 workers
+Julia defines "master" and "worker" processes so (nprocs - 1) workers
 are started.  Rendering is divided equally between worker processes, the
 master process handles coordination.
 
@@ -30,3 +30,5 @@ For all options:
 	  --profile    profile render (-t >= 2)
 	  --cprofile   output c calls in profile (-t >= 2)
 	  -h, --help   show this help message and exit
+
+Note that profiling can only when [numprocs] == 1 (default)
