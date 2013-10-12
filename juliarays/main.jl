@@ -31,12 +31,12 @@ function parse_commandline()
         "--home"
             help = "RAYS home folder"
             arg_type = String
-            default = abspath(".")
+            default = "."
         "--profile"
             help = "profile render (-t >= 2)"
             action = :store_true
         "--cprofile"
-            help = "output c calls in profile (-t >= 2)"
+            help = "profile render including c calls"
             action = :store_true
         end
     parse_args(settings)
@@ -65,7 +65,8 @@ end
 
 function main()
     parsed_args = parse_commandline()
-    
+
+    homepath   = abspath(parsed_args["home"]) 
     outputfile = parsed_args["o"]
     megapixels = parsed_args["m"]
     artfile    = parsed_args["a"]
