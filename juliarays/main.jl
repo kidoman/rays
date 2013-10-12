@@ -96,7 +96,7 @@ function main()
     
     for t in 1:ntimes
  	@printf(
-	"Strarting render#%d of size %.2f MP (%dx%d) with %d workers | profile: %s\n",
+	"Starting render#%d of size %.2f MP (%dx%d) with %d workers | profile: %s\n",
 		t, megapixels, size, size, nworkers(), profile && t > 1)
         Base.gc()
         
