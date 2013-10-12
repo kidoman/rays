@@ -35,6 +35,8 @@ immutable RGB{T<:Real}
     b :: T
 end
 
+RGB{T}(r::T, g::T, b::T) = RGB(convert(T, r), convert(T, g), convert(T, b))
+
 # implement write function for pixel type (called when writing pixel array to STDOUT)
 Base.write(s::IO, pix::RGB) = begin n = 0
                                     n += write(s, pix.r)
@@ -54,45 +56,6 @@ clamp_rgb8{T<:Real}(v::T) = v < 0 ? uint8(0) : v > 255 ? uint8(255) : uint8(v)
 clamp_rgb8{T<:Real}(pix::RGB{T}) = RGB{Uint8}(clamp_rgb8(pix.r),
                                               clamp_rgb8(pix.g),
                                               clamp_rgb8(pix.b))
-# -- Objects to Render ---
-
-const art = [
-" 1111            1    ",
-" 1   11         1 1   ",
-" 1     1       1   1  ",
-" 1     1      1     1 ",
-" 1    11     1       1",
-" 11111       111111111",
-" 1    1      1       1",
-" 1     1     1       1",
-" 1      1    1       1",
-"                      ",
-"1         1    11111  ",
-" 1       1    1       ",
-"  1     1    1        ",
-"   1   1     1        ",
-"    1 1       111111  ",
-"     1              1 ",
-"     1              1 ",
-"     1             1  ",
-"     1        111111  "]
-
-function make_objects()
-    objs = Array(Vec{Float64}, 0)
-
-    nr = length(art)
-    for j in 1:nr
-        nc = length(art[j])
-        for k in 1:nc
-            if art[j][k] != ' '
-                push!(objs, Vec{Float64}(float(k-1), 6.5, -(nr - j) - 2.0))
-            end
-        end
-    end
-    return objs
-end
-
-const objects = make_objects()
 
 # --- Contants ----
 const HIT        = 2
@@ -114,7 +77,8 @@ const FLOOR_PATTERN2  = RGB{Float64}(3.0, 3.0, 3.0)
 # return HIT if a hit was found (and also return distance t and bouncing ray n)
 # return NOHIT_UP if no hit was found but ray goes upward
 # return NOHIT_DOWN if no hit was found but ray goes downward
-function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
+function intersect_test{T<:FloatingPoint}(objects::Vector{Vec{T}},
+					  orig::Vec{T}, dir::Vec{T})
 
     dist = 1e9
     st = NOHIT_UP
@@ -153,10 +117,11 @@ end
 
 # sample the world and return the pixel color
 # for a ray passing by point o and d direction
-function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
+function sample_world{T<:FloatingPoint}(objects::Vector{Vec{T}},
+				        orig::Vec{T}, dir::Vec{T})
 
     # search for an intersection ray vs world
-    st, dist, bounce = intersect_test(orig, dir)
+    st, dist, bounce = intersect_test(objects, orig, dir)
     obounce = bounce
 
     if st == NOHIT_UP
@@ -179,7 +144,7 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     if b < 0.0
         b = 0.0
     else
-        st1, _, _ = intersect_test(h, l)
+        st1, _, _ = intersect_test(objects, h, l)
         if st1 != NOHIT_UP
             b = 0.0
         end
@@ -197,14 +162,55 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
 
     # calculate the color p with diffuse and specular component
     p = dot(l, r * (b > 0.0 ? 1.0 : 0.0))
-    p ^= 99
-
+    p ^= 33
+    
     # st == HIT a sphere was hit. cast a ray bouncing from sphere surface
-    return RGB{T}(p, p, p) + sample_world(h, r) * 0.5
+    return RGB{T}(p, p, p) + sample_world(objects, h, r) * 0.5
 end
 
 
-function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
+function render(objects::Vector{Vec{Float64}},
+		size::Integer, lr::Integer, ur::Integer)
+    
+    # camera direction
+    cam_dir = unit(Vec{Float64}(-3.1, -16.0, 1.9))
+
+    # camera up vector
+    cam_up = unit(cross(STD_VEC, cam_dir)) * 0.002
+
+    # right vector
+    cam_right = unit(cross(cam_dir, cam_up)) * 0.002
+    c = ((cam_up + cam_right) * -256.0) + cam_dir
+
+    # aspect ratio
+    ar = 512.0 / size
+    
+    pixels = Array(RGB{Uint8}, (ur - lr + 1) * size)
+
+    for y in (lr - 1):(ur - 1)
+        for x in 0:(size - 1)
+            pix = DEFAULT_COLOR
+            # cast 64 rays per pixel (for blur and soft shadows)
+            for _ in 1:64
+                # a little bit of delta up/down and left/right
+                t = (cam_up * (rand() - 0.5) * 99.0) + (cam_right * (rand() - 0.5) * 99.0)
+                # set the camera focal point and cast the ray
+                # accumulating the color returned in pix
+                orig = CAMERA_VEC + t
+                dir = ((-1.0 * t) + (cam_up * (rand() + ar * float(x)) +
+                                     cam_right * (rand() + ar * float(y)) + c) * 16.0)
+                dir = unit(dir)
+                pix += (sample_world(objects, orig, unit(dir)) * 3.5)
+            end
+            idx = (ur - y - 1) * size + (size - x)
+            pixels[idx] = clamp_rgb8(pix)
+        end
+    end
+    return pixels
+end
+
+
+function render!(objects::Vector{Vec{Float64}}, pixels::Vector{RGB{Uint8}}, size::Integer)
     # camera direction
     cam_dir = unit(Vec{Float64}(-3.1, -16.0, 1.9))
 
@@ -218,8 +224,8 @@ function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
     # aspect ratio
     ar = 512.0 / size
 
-    for y in 0:(size - 1)
-        for x in 0:(size - 1)
+    for y in 0:(size-1)
+        for x in 0:(size-1)
             pix = DEFAULT_COLOR
             # cast 64 rays per pixel (for blur and soft shadows)
             for _ in 1:64
@@ -231,7 +237,7 @@ function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
                 dir = ((-1.0 * t) + (cam_up * (rand() + ar * float(x)) +
                                      cam_right * (rand() + ar * float(y)) + c) * 16.0)
                 dir = unit(dir)
-                pix += (sample_world(orig, unit(dir)) * 3.5)
+                pix += (sample_world(objects, orig, unit(dir)) * 3.5)
             end
             idx = (size - y - 1) * size + (size - x)
             pixels[idx] = clamp_rgb8(pix)
@@ -239,26 +245,4 @@ function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
     end
 end
 
-
-function main(megapixels::FloatingPoint, times::Integer = 1)
-    @assert megapixels > 0
-    size = int(sqrt(megapixels * 1e6))
-
-    # write PPM header
-    header = bytestring("P6 $size $size 255 ")
-    write(STDOUT, header)
-
-    pixels = Array(RGB{Uint8}, size^2)
-    for _ in 1:times
-        render!(pixels, size)
-    end
-    write(STDOUT, pixels)
-end
-end
-
-nargs = length(ARGS)
-if nargs     == 0 Rays.main(1.0)
-elseif nargs == 1 Rays.main(float(ARGS[1]))
-elseif nargs == 2 Rays.main(float(ARGS[1]), int(ARGS[2]))
-else println("Error: too many arguments")
 end
