@@ -77,7 +77,8 @@ const FLOOR_PATTERN2  = RGB{Float64}(3.0, 3.0, 3.0)
 # return HIT if a hit was found (and also return distance t and bouncing ray n)
 # return NOHIT_UP if no hit was found but ray goes upward
 # return NOHIT_DOWN if no hit was found but ray goes downward
-function intersect_test{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
+function intersect_test{T<:FloatingPoint}(objects::Vector{Vec{T}},
+					  orig::Vec{T}, dir::Vec{T})
 
     dist = 1e9
     st = NOHIT_UP
@@ -116,10 +117,11 @@ end
 
 # sample the world and return the pixel color
 # for a ray passing by point o and d direction
-function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
+function sample_world{T<:FloatingPoint}(objects::Vector{Vec{T}},
+				        orig::Vec{T}, dir::Vec{T})
 
     # search for an intersection ray vs world
-    st, dist, bounce = intersect_test(orig, dir)
+    st, dist, bounce = intersect_test(objects, orig, dir)
     obounce = bounce
 
     if st == NOHIT_UP
@@ -142,7 +144,7 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     if b < 0.0
         b = 0.0
     else
-        st1, _, _ = intersect_test(h, l)
+        st1, _, _ = intersect_test(objects, h, l)
         if st1 != NOHIT_UP
             b = 0.0
         end
@@ -163,11 +165,12 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
     p ^= 33
     
     # st == HIT a sphere was hit. cast a ray bouncing from sphere surface
-    return RGB{T}(p, p, p) + sample_world(h, r) * 0.5
+    return RGB{T}(p, p, p) + sample_world(objects, h, r) * 0.5
 end
 
 
-function render(size::Integer, lr::Integer, ur::Integer)
+function render(objects::Vector{Vec{Float64}},
+		size::Integer, lr::Integer, ur::Integer)
     
     # camera direction
     cam_dir = unit(Vec{Float64}(-3.1, -16.0, 1.9))
@@ -197,7 +200,7 @@ function render(size::Integer, lr::Integer, ur::Integer)
                 dir = ((-1.0 * t) + (cam_up * (rand() + ar * float(x)) +
                                      cam_right * (rand() + ar * float(y)) + c) * 16.0)
                 dir = unit(dir)
-                pix += (sample_world(orig, unit(dir)) * 3.5)
+                pix += (sample_world(objects, orig, unit(dir)) * 3.5)
             end
             idx = (ur - y - 1) * size + (size - x)
             pixels[idx] = clamp_rgb8(pix)
@@ -207,7 +210,7 @@ function render(size::Integer, lr::Integer, ur::Integer)
 end
 
 
-function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
+function render!(objects::Vector{Vec{Float64}}, pixels::Vector{RGB{Uint8}}, size::Integer)
     # camera direction
     cam_dir = unit(Vec{Float64}(-3.1, -16.0, 1.9))
 
@@ -234,7 +237,7 @@ function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
                 dir = ((-1.0 * t) + (cam_up * (rand() + ar * float(x)) +
                                      cam_right * (rand() + ar * float(y)) + c) * 16.0)
                 dir = unit(dir)
-                pix += (sample_world(orig, unit(dir)) * 3.5)
+                pix += (sample_world(objects, orig, unit(dir)) * 3.5)
             end
             idx = (size - y - 1) * size + (size - x)
             pixels[idx] = clamp_rgb8(pix)
