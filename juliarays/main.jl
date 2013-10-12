@@ -19,7 +19,7 @@ function parse_commandline()
         "-o"
             help = "output file of rendered image"
             arg_type = String
-            default = "render.ppm"
+            default = "juliarays.ppm"
         "-r"
             help = "output file of benchmark data"
             arg_type = String
@@ -33,10 +33,10 @@ function parse_commandline()
             arg_type = String
             default = abspath(".")
         "--profile"
-            help = "profile render"
+            help = "profile render (-t >= 2)"
             action = :store_true
         "--cprofile"
-            help = "output c calls in profile"
+            help = "output c calls in profile (-t >= 2)"
             action = :store_true
         end
     parse_args(settings)
@@ -71,7 +71,7 @@ function main()
     artfile    = parsed_args["a"]
     resfile    = parsed_args["r"]
     ntimes     = parsed_args["t"]
-    profile    = parsed_args["profile"]
+    profile    = parsed_args["profile"] || parsed_args["cprofile"]
 
     if profile && nprocs() > 1
         error("profile is only enabled for single process exec")
