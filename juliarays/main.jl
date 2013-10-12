@@ -48,7 +48,7 @@ function object_array(art::Array{Any,1})
     objs = Array(Rays.Vec{Float64}, 0)
     for (j, line) in enumerate(art)
         for (k, c) in enumerate(line)
-            if c != ' ' || c != '\n'
+            if c != ' ' && c != '\n'
                 push!(objs, Rays.Vec{Float64}(float(k-1), 6.5, -(nr - j) - 2.0))
             end
         end
@@ -106,7 +106,7 @@ function main()
                # single process case
 	       @profile Rays.render!(pixels, size)
             else
-               Rays.render!(pixels, size)
+               Rays.render!(art_object, pixels, size)
 	    end
         else
             # multiprocess case
@@ -115,7 +115,7 @@ function main()
             # image is raytraced with origin defined as bottom left of image
             for wid in 1:nworkers()
                 lr, ur = chunk_idxs[wid], chunk_idxs[wid+1]-1
-                ref = remotecall(wid+1, Rays.render, size, lr, ur) 
+                ref = remotecall(wid+1, Rays.render, art_object, size, lr, ur) 
                 push!(remotes, ref)
             end
             # fill in image chunks from workers
