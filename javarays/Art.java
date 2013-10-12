@@ -20,6 +20,8 @@ public class Art {
             lines.add(line);
         }
 
+        reader.close();
+
         return createFromStrings(lines.toArray(new String[0]));
     }
 
