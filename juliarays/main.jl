@@ -28,6 +28,10 @@ function parse_commandline()
             help = "art file to render"
             arg_type = String
             default = "ART"
+        "--home"
+            help = "RAYS home folder"
+            arg_type = String
+            default = abspath(".")
         "--profile"
             help = "profile render"
             action = :store_true
@@ -76,7 +80,7 @@ function main()
     if profile && ntimes < 2
         error("profile is only enabled for multiple multiple exec i.e. -t > 1")
     end
-    art_object = open(read_art, artfile)
+    art_object = open(read_art, joinpath(parsed_args["home"], artfile))
     # TODO: we are clobering the size built in
     size = int(sqrt(megapixels * 1e6))
     
