@@ -31,8 +31,6 @@ public final class Raycaster {
     static int size = 512;
     static byte[] bytes;
 
-    static float aspectRatio;
-
     private static float megaPixel;
     private static int threadCount;
     private static int renderCount;
@@ -77,7 +75,7 @@ public final class Raycaster {
         }
 
         size = (int)(Math.sqrt(megaPixel * 1000000));
-        aspectRatio = 512.f / size;
+        Camera.aspectRatio = 512.f / size;
     }
 
     /** Represent exactly one render pass */
