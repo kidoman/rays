@@ -56,45 +56,6 @@ clamp_rgb8{T<:Real}(v::T) = v < 0 ? uint8(0) : v > 255 ? uint8(255) : uint8(v)
 clamp_rgb8{T<:Real}(pix::RGB{T}) = RGB{Uint8}(clamp_rgb8(pix.r),
                                               clamp_rgb8(pix.g),
                                               clamp_rgb8(pix.b))
-# -- Objects to Render ---
-
-const art = [
-" 1111            1    ",
-" 1   11         1 1   ",
-" 1     1       1   1  ",
-" 1     1      1     1 ",
-" 1    11     1       1",
-" 11111       111111111",
-" 1    1      1       1",
-" 1     1     1       1",
-" 1      1    1       1",
-"                      ",
-"1         1    11111  ",
-" 1       1    1       ",
-"  1     1    1        ",
-"   1   1     1        ",
-"    1 1       111111  ",
-"     1              1 ",
-"     1              1 ",
-"     1             1  ",
-"     1        111111  "]
-
-function make_objects()
-    objs = Array(Vec{Float64}, 0)
-
-    nr = length(art)
-    for j in 1:nr
-        nc = length(art[j])
-        for k in 1:nc
-            if art[j][k] != ' '
-                push!(objs, Vec{Float64}(float(k-1), 6.5, -(nr - j) - 2.0))
-            end
-        end
-    end
-    return objs
-end
-
-const objects = make_objects()
 
 # --- Contants ----
 const HIT        = 2
