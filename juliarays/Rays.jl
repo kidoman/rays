@@ -35,6 +35,8 @@ immutable RGB{T<:Real}
     b :: T
 end
 
+RGB{T}(r::T, g::T, b::T) = RGB(convert(T, r), convert(T, g), convert(T, b))
+
 # implement write function for pixel type (called when writing pixel array to STDOUT)
 Base.write(s::IO, pix::RGB) = begin n = 0
                                     n += write(s, pix.r)
@@ -197,10 +199,50 @@ function sample_world{T<:FloatingPoint}(orig::Vec{T}, dir::Vec{T})
 
     # calculate the color p with diffuse and specular component
     p = dot(l, r * (b > 0.0 ? 1.0 : 0.0))
-    p ^= 99
-
+    p ^= 33
+    
     # st == HIT a sphere was hit. cast a ray bouncing from sphere surface
     return RGB{T}(p, p, p) + sample_world(h, r) * 0.5
+end
+
+
+function render(size::Integer, lr::Integer, ur::Integer)
+    
+    # camera direction
+    cam_dir = unit(Vec{Float64}(-3.1, -16.0, 1.9))
+
+    # camera up vector
+    cam_up = unit(cross(STD_VEC, cam_dir)) * 0.002
+
+    # right vector
+    cam_right = unit(cross(cam_dir, cam_up)) * 0.002
+    c = ((cam_up + cam_right) * -256.0) + cam_dir
+
+    # aspect ratio
+    ar = 512.0 / size
+    
+    pixels = Array(RGB{Uint8}, (ur - lr + 1) * size)
+
+    for y in (lr - 1):(ur - 1)
+        for x in 0:(size - 1)
+            pix = DEFAULT_COLOR
+            # cast 64 rays per pixel (for blur and soft shadows)
+            for _ in 1:64
+                # a little bit of delta up/down and left/right
+                t = (cam_up * (rand() - 0.5) * 99.0) + (cam_right * (rand() - 0.5) * 99.0)
+                # set the camera focal point and cast the ray
+                # accumulating the color returned in pix
+                orig = CAMERA_VEC + t
+                dir = ((-1.0 * t) + (cam_up * (rand() + ar * float(x)) +
+                                     cam_right * (rand() + ar * float(y)) + c) * 16.0)
+                dir = unit(dir)
+                pix += (sample_world(orig, unit(dir)) * 3.5)
+            end
+            idx = (ur - y - 1) * size + (size - x)
+            pixels[idx] = clamp_rgb8(pix)
+        end
+    end
+    return pixels
 end
 
 
@@ -218,8 +260,8 @@ function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
     # aspect ratio
     ar = 512.0 / size
 
-    for y in 0:(size - 1)
-        for x in 0:(size - 1)
+    for y in 0:(size-1)
+        for x in 0:(size-1)
             pix = DEFAULT_COLOR
             # cast 64 rays per pixel (for blur and soft shadows)
             for _ in 1:64
@@ -239,26 +281,4 @@ function render!(pixels::Vector{RGB{Uint8}}, size::Integer)
     end
 end
 
-
-function main(megapixels::FloatingPoint, times::Integer = 1)
-    @assert megapixels > 0
-    size = int(sqrt(megapixels * 1e6))
-
-    # write PPM header
-    header = bytestring("P6 $size $size 255 ")
-    write(STDOUT, header)
-
-    pixels = Array(RGB{Uint8}, size^2)
-    for _ in 1:times
-        render!(pixels, size)
-    end
-    write(STDOUT, pixels)
-end
-end
-
-nargs = length(ARGS)
-if nargs     == 0 Rays.main(1.0)
-elseif nargs == 1 Rays.main(float(ARGS[1]))
-elseif nargs == 2 Rays.main(float(ARGS[1]), int(ARGS[2]))
-else println("Error: too many arguments")
 end
