@@ -12,8 +12,8 @@ public class ArgumentParser {
     public final float megaPixel;
     public final int renderCount;
     public final int renderThreads;
-    public final File outputFile;
-    public final File resultFile;
+    public final File imageFile;
+    public final File jsonFile;
     public final File artFile;
 
     /** The only way to create a instance should be by parseArguments. */
@@ -23,31 +23,34 @@ public class ArgumentParser {
         megaPixel = _megaPixel;
         renderCount = _renderCount;
         renderThreads = _renderThreads;
-        outputFile = oFile;
-        resultFile = rFile;
+        imageFile = oFile;
+        jsonFile = rFile;
         artFile = aFile;
     };
 
     /** */
     static void printUsage() {
         System.out.println("Usage: java javarays/Raycaster [options]");
-        System.out.println("  -mp [1.0]");
+        System.out.println("  -mp MEGAPIXEL [1.0]");
         System.out.println("      Size of the image in mega pixel.");
         System.out.println();
-        System.out.println("  -t  [1]");
+        System.out.println("  -t  TIMES [1]");
         System.out.println("      Number of times the image is rendered.");
         System.out.println();
-        System.out.println("  -p  [#CPUs]");
+        System.out.println("  -p  THREADS [#CPUs]");
         System.out.println("      Number of threads to render the image.");
         System.out.println();
-        System.out.println("  -o  [render.ppm]");
+        System.out.println("  -o  IMAGE_FILE [render.ppm]");
         System.out.println("      Output file for the renderer.");
         System.out.println();
-        System.out.println("  -r  [result.json]");
+        System.out.println("  -r  JSON_FILE [result.json]");
         System.out.println("      Output file for the result.");
         System.out.println();
-        System.out.println("  -a  [ART]");
+        System.out.println("  -a  ART_FILE [ART]");
         System.out.println("      Input file for the raytracer.");
+        System.out.println();
+        System.out.println("  -home PATH [$RAYS_HOME]");
+        System.out.println("      Rays folder.");
         System.out.println();
         System.out.println("  -h");
         System.out.println("      This help.");
@@ -60,6 +63,7 @@ public class ArgumentParser {
         File oFile = new File("render.ppm");
         File rFile = new File("result.json");
         File aFile = new File("ART");
+        String home = System.getenv("RAYS_HOME");
 
         try {
             for(int i = 0; i < args.length; i++) {
@@ -75,6 +79,8 @@ public class ArgumentParser {
                     rFile = new File(args[++i]);
                 } else if(args[i].equals("-a") && (i+1) < args.length) {
                     aFile = new File(args[++i]);
+                } else if(args[i].equals("-home") && (i+1) < args.length) {
+                    home = args[++i];
                 } else if(args[i].equals("-h")) {
                     printUsage();
                     System.exit(0);
@@ -90,6 +96,10 @@ public class ArgumentParser {
             System.err.println();
             printUsage();
             System.exit(1);
+        }
+
+        if(aFile.getName().equals("ART") && home != null) {
+            aFile = new File(home, "ART");
         }
 
         return new ArgumentParser(megaPixel, renderCount, renderThreads,

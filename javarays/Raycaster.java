@@ -1,5 +1,8 @@
 package javarays;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.Vector;
 
 public final class Raycaster {
@@ -20,6 +23,27 @@ public final class Raycaster {
         }
     }
 
+    private static void saveJson(final File jsonFile,
+                                 final long average,
+                                 final long[] samples) throws Exception {
+        final StringBuilder sb = new StringBuilder("{\"average\":");
+        sb.append(average);
+        sb.append(", \"samples\":[");
+
+        for(int i = 0; i < samples.length; i++) {
+            if(i != 0) {
+                sb.append(", ");
+            }
+            sb.append(samples[i]);
+        }
+
+        sb.append("]}");
+
+        final BufferedWriter writer = new BufferedWriter(new FileWriter(jsonFile));
+        writer.write(sb.toString());
+        writer.close();
+    }
+
     public static void main(final String[] args) throws Exception {
         parser = ArgumentParser.parseArgument(args);
         final RayImage image = new RayImage(parser.megaPixel);
@@ -27,6 +51,7 @@ public final class Raycaster {
         Camera.aspectRatio = 512.f / image.size;
 
         long overallDuration= 0;
+        final long[] samples = new long[parser.renderCount];
         for(int i = 0; i < parser.renderCount; i++) {
             System.out.printf("Starting render#%d of size %.2f MP (%dx%d) with %d threads. ",
                     i+1, parser.megaPixel, image.size, image.size, parser.renderThreads);
@@ -34,11 +59,15 @@ public final class Raycaster {
             final long startTime = System.currentTimeMillis();
             startRenderPass(image, objects);
             final long duration = System.currentTimeMillis() - startTime;
+
+            samples[i] = duration;
             overallDuration += duration;
             System.out.printf("Completed in %d ms%n", duration);
         }
 
-        System.out.printf("Average time for rendering: %d ms%n", (overallDuration / parser.renderCount));
-        image.save(parser.outputFile);
+        final long avgTime = overallDuration / parser.renderCount;
+        System.out.printf("Average time for rendering: %d ms%n", avgTime);
+        saveJson(parser.jsonFile, avgTime, samples);
+        image.save(parser.imageFile);
     }
 }
