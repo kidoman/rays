@@ -5,7 +5,6 @@ import static javarays.Camera.ORIGIN;
 import static javarays.Camera.RIGHT;
 import static javarays.Camera.UP;
 import static javarays.Camera.aspectRatio;
-import static javarays.Raycaster.bytes;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -29,11 +28,13 @@ final class Worker implements Runnable  {
     private final ThreadLocalRandom rnd = ThreadLocalRandom.current();
 
     private final RayVector[] objects;
+    private final RayImage image;
 
     private float t;
     private RayVector n;
 
-    public Worker(final RayVector[] _objects, final int _offset, final int _jump) {
+    public Worker(final RayImage _image, final RayVector[] _objects, final int _offset, final int _jump) {
+        image = _image;
         objects = _objects;
         offset = _offset;
         jump = _jump;
@@ -126,15 +127,15 @@ final class Worker implements Runnable  {
 
     @Override
     public void run() {
-        for (int y = offset; y < Raycaster.size; y += jump) { // For each row
-            int k = (Raycaster.size - y - 1) * Raycaster.size * 3;
+        for (int y = offset; y < image.size; y += jump) { // For each row
+            int k = (image.size - y - 1) * image.size * 3;
 
-            for (int x = Raycaster.size; x-- > 0 ; ) { // For each pixel in a line
+            for (int x = image.size; x-- > 0 ; ) { // For each pixel in a line
                 // Reuse the vector class to store not XYZ but a RGB pixel color
                 final RayVector p = innerLoop(y, x, DEFAULT_COLOR);
-                bytes[k++] = clamp(p.x);
-                bytes[k++] = clamp(p.y);
-                bytes[k++] = clamp(p.z);
+                image.data[k++] = clamp(p.x);
+                image.data[k++] = clamp(p.y);
+                image.data[k++] = clamp(p.z);
             }
         }
     }
