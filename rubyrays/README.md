@@ -10,10 +10,12 @@ implentation that does support real threading.
 ## Prerequisites
 
   * Ruby 1.9+
+  * JRuby 1.7.5
 
 ## Usage
 
     $ ruby rubyrays.rb
+    $ jruby -J-server -J-Xms4096m -J-Xmx8192m -J-XX:+AggressiveOpts rubyrays.rb
     $ open render.ppm
 
 There are three optional arguments: `width`, `height`, and `threads`.

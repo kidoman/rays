@@ -7,5 +7,5 @@
 ## Usage
 
     $ javac javarays/Raycaster.java
-    $ time java javarays.Raycaster > javarays.ppm
+    $ java -server -Xms4096m -Xmx8192m -XX:+AggressiveOpts -XX:+UseCompressedOops -noverify javarays.Raycaster
     $ open javarays.ppm
