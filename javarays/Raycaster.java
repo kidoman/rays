@@ -1,106 +1,19 @@
 package javarays;
 
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.Vector;
 
 public final class Raycaster {
 
-    private final static char[][] art = {
-        " 11111           1    ".toCharArray(),
-        " 1    1         1 1   ".toCharArray(),
-        " 1     1       1   1  ".toCharArray(),
-        " 1     1      1     1 ".toCharArray(),
-        " 1    11     1       1".toCharArray(),
-        " 11111       111111111".toCharArray(),
-        " 1    1      1       1".toCharArray(),
-        " 1     1     1       1".toCharArray(),
-        " 1      1    1       1".toCharArray(),
-        "                      ".toCharArray(),
-        "1         1    11111  ".toCharArray(),
-        " 1       1    1       ".toCharArray(),
-        "  1     1    1        ".toCharArray(),
-        "   1   1     1        ".toCharArray(),
-        "    1 1       111111  ".toCharArray(),
-        "     1              1 ".toCharArray(),
-        "     1              1 ".toCharArray(),
-        "     1             1  ".toCharArray(),
-        "     1        111111  ".toCharArray()
-    };
-
-    static private RayVector[] buildObjects() {
-        final Vector<RayVector> tmp = new Vector<>(art.length * art[0].length);
-
-        final int nr = art.length;
-        for (int j = 0; j < nr; j++) {
-            final int nc = art[j].length;
-            for (int k = 0; k < nc; k++) {
-                if (art[j][k] != ' ') {
-                    tmp.add(new RayVector(k, 6.5f, -(nr - j) - 1.0f));
-                }
-            }
-        }
-
-        return tmp.toArray(new RayVector[0]);
-    }
-
-    static int size = 512;
-    static byte[] bytes;
-
-    static float aspectRatio;
-
-    private static float megaPixel;
-    private static int threadCount;
-    private static int renderCount;
-
-    /** */
-    static void printUsage() {
-        System.out.println("Usage: [mega pixels] [render count] [threads]");
-        System.out.println("  mega pixels  [  1.0] Size of the image in mega pixel.");
-        System.out.println("  render count [    1] Number of times the image is rendered.");
-        System.out.println("  threads      [#CPUs] Number of threads to render the image.");
-        System.out.println();
-        System.out.println("The result image is stored in render.ppm of the current working directory.");
-    }
-
-    /**
-     * Parse passed command line arguments.
-     *
-     * Don't use existing libraries to not create dependencies.
-     */
-    private static void parseArgs(final String[] args) {
-        megaPixel = 1;
-        renderCount = 1;
-        threadCount = Runtime.getRuntime().availableProcessors();
-
-        try {
-            if(args.length > 0) {
-                megaPixel = Float.parseFloat(args[0]);
-            }
-
-            if(args.length > 1) {
-                renderCount = Integer.parseInt(args[1]);
-            }
-
-            if(args.length > 2) {
-                threadCount = Integer.parseInt(args[2]);
-            }
-        } catch(final NumberFormatException e) {
-            System.err.println("Error parsing cmd lines parameter.");
-            System.err.println();
-            printUsage();
-            System.exit(1);
-        }
-
-        size = (int)(Math.sqrt(megaPixel * 1000000));
-        aspectRatio = 512.f / size;
-    }
+    private static ArgumentParser parser;
 
     /** Represent exactly one render pass */
-    private static void startRenderPass(final RayVector[] objects) throws Exception {
+    private static void startRenderPass(final RayImage img, final RayVector[] objects) throws Exception {
         final Vector<Thread> threads = new Vector<>();
-        for (int i = 0; i < threadCount; ++i) {
-            final Thread thread = new Thread(new Worker(objects, i, threadCount));
+        for (int i = 0; i < parser.renderThreads; ++i) {
+            final Thread thread = new Thread(new Worker(img, objects, i, parser.renderThreads));
             thread.start();
             threads.add(thread);
         }
@@ -110,28 +23,51 @@ public final class Raycaster {
         }
     }
 
+    private static void saveJson(final File jsonFile,
+                                 final long average,
+                                 final long[] samples) throws Exception {
+        final StringBuilder sb = new StringBuilder("{\"average\":");
+        sb.append(average);
+        sb.append(", \"samples\":[");
+
+        for(int i = 0; i < samples.length; i++) {
+            if(i != 0) {
+                sb.append(", ");
+            }
+            sb.append(samples[i]);
+        }
+
+        sb.append("]}");
+
+        final BufferedWriter writer = new BufferedWriter(new FileWriter(jsonFile));
+        writer.write(sb.toString());
+        writer.close();
+    }
+
     public static void main(final String[] args) throws Exception {
-        parseArgs(args);
-        final RayVector[] objects = buildObjects();
-        bytes = new byte[3*size*size];
+        parser = ArgumentParser.parseArgument(args);
+        final RayImage image = new RayImage(parser.megaPixel);
+        final RayVector[] objects = Art.createFromFile(parser.artFile);
+        Camera.aspectRatio = 512.f / image.size;
 
         long overallDuration= 0;
-        for(int i = 0; i < renderCount; i++) {
+        final long[] samples = new long[parser.renderCount];
+        for(int i = 0; i < parser.renderCount; i++) {
             System.out.printf("Starting render#%d of size %.2f MP (%dx%d) with %d threads. ",
-                    i+1, megaPixel, size, size, threadCount);
+                    i+1, parser.megaPixel, image.size, image.size, parser.renderThreads);
 
             final long startTime = System.currentTimeMillis();
-            startRenderPass(objects);
+            startRenderPass(image, objects);
             final long duration = System.currentTimeMillis() - startTime;
+
+            samples[i] = duration;
             overallDuration += duration;
             System.out.printf("Completed in %d ms%n", duration);
         }
 
-        System.out.printf("Average time for rendering: %d ms%n", (overallDuration / renderCount));
-
-        final BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream("render.ppm"));
-        stream.write("".format("P6 %d %d 255 ", size, size).getBytes());
-        stream.write(bytes);
-        stream.flush();
+        final long avgTime = overallDuration / parser.renderCount;
+        System.out.printf("Average time for rendering: %d ms%n", avgTime);
+        saveJson(parser.jsonFile, avgTime, samples);
+        image.save(parser.imageFile);
     }
 }

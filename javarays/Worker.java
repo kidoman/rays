@@ -1,7 +1,10 @@
 package javarays;
 
-import static javarays.Raycaster.aspectRatio;
-import static javarays.Raycaster.bytes;
+import static javarays.Camera.EYE_OFFSET;
+import static javarays.Camera.ORIGIN;
+import static javarays.Camera.RIGHT;
+import static javarays.Camera.UP;
+import static javarays.Camera.aspectRatio;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -13,17 +16,10 @@ final class Worker implements Runnable  {
     private static final RayVector EMPTY_VEC = new RayVector();
     private static final RayVector SKY_VEC   = new RayVector(1.f,  1.f,  1.f);
 
-    // Ray Origin
-    private static final RayVector CAM_FOCAL_VEC   = new RayVector(-5.f, 16.f,  8.f);
     private static final RayVector FLOOR_PATTERN_1 = new RayVector( 3.f,  1.f,  1.f);
     private static final RayVector FLOOR_PATTERN_2 = new RayVector( 3.f,  3.f,  3.f);
 
     private static final RayVector STD_VEC   = new RayVector(0.f,  0.f,  1.f);
-    private static final RayVector g = (new RayVector(-3.1f, -16.f, 1.9f)).norm(); // WTF ? See https://news.ycombinator.com/item?id=6425965 for more.
-
-    private static final RayVector a = (STD_VEC.cross(g)).norm().scale(.002f);
-    private static final RayVector b = (g.cross(a)).norm().scale(.002f);
-    private static final RayVector c = (a.add(b)).scale(-256).add(g);
 
     private final int offset;
     private final int jump;
@@ -32,11 +28,13 @@ final class Worker implements Runnable  {
     private final ThreadLocalRandom rnd = ThreadLocalRandom.current();
 
     private final RayVector[] objects;
+    private final RayImage image;
 
     private float t;
     private RayVector n;
 
-    public Worker(final RayVector[] _objects, final int _offset, final int _jump) {
+    public Worker(final RayImage _image, final RayVector[] _objects, final int _offset, final int _jump) {
+        image = _image;
         objects = _objects;
         offset = _offset;
         jump = _jump;
@@ -46,7 +44,7 @@ final class Worker implements Runnable  {
     // Return 2 if a hit was found (and also return distance t and bouncing ray n).
     // Return 0 if no hit was found but ray goes upward
     // Return 1 if no hit was found but ray goes downward
-    private final int tracer(RayVector orig, final RayVector dir) {
+    private final int tracer(final RayVector orig, final RayVector dir) {
         t = 1e9f;
         int m = 0;
         final float p = -orig.z / dir.z;
@@ -120,7 +118,7 @@ final class Worker implements Runnable  {
         final RayVector r = dir.add(on.scale(on.dot(dir.scale(-2.f)))); // r = The half-vector
 
         // Calculate the color 'p' with diffuse and specular component
-        float p = (float)Math.pow(l.dot(r.scale(b > 0 ? 1.f : 0.f)), 99.0);
+        final float p = (float)Math.pow(l.dot(r.scale(b > 0 ? 1.f : 0.f)), 99.0);
 
         // m == 2 A sphere was hit. Cast an ray bouncing from the sphere surface.
         // Attenuate color by 50% since it is bouncing (*.5)
@@ -129,15 +127,15 @@ final class Worker implements Runnable  {
 
     @Override
     public void run() {
-        for (int y = offset; y < Raycaster.size; y += jump) { // For each row
-            int k = (Raycaster.size - y - 1) * Raycaster.size * 3;
+        for (int y = offset; y < image.size; y += jump) { // For each row
+            int k = (image.size - y - 1) * image.size * 3;
 
-            for (int x = Raycaster.size; x-- > 0 ; ) { // For each pixel in a line
+            for (int x = image.size; x-- > 0 ; ) { // For each pixel in a line
                 // Reuse the vector class to store not XYZ but a RGB pixel color
                 final RayVector p = innerLoop(y, x, DEFAULT_COLOR);
-                bytes[k++] = clamp(p.x);
-                bytes[k++] = clamp(p.y);
-                bytes[k++] = clamp(p.z);
+                image.data[k++] = clamp(p.x);
+                image.data[k++] = clamp(p.y);
+                image.data[k++] = clamp(p.z);
             }
         }
     }
@@ -150,18 +148,18 @@ final class Worker implements Runnable  {
             // Depth of View blur).
             final float factor1 = (rnd.nextFloat()-.5f) * 99.f;
             final float factor2 = (rnd.nextFloat()-.5f) * 99.f;
-            final RayVector t = a.scale(factor1).add(b.scale(factor2)); // A little bit of delta up/down and left/right
+            final RayVector t = UP.scale(factor1).add(RIGHT.scale(factor2)); // A little bit of delta up/down and left/right
 
             // Set the camera focal point vector(17,16,8) and Cast the ray
             // Accumulate the color returned in the p variable
 
             // Ray Direction with random deltas
-            final RayVector tmpA = a.scale(rnd.nextFloat() + x * aspectRatio);
-            final RayVector tmpB = b.scale(rnd.nextFloat() + y * aspectRatio);
-            final RayVector tmpC = tmpA.add(tmpB).add(c);
+            final RayVector tmpA = UP.scale(rnd.nextFloat() + x * aspectRatio);
+            final RayVector tmpB = RIGHT.scale(rnd.nextFloat() + y * aspectRatio);
+            final RayVector tmpC = tmpA.add(tmpB).add(EYE_OFFSET);
             final RayVector rayDirection = t.scale(-1).add(tmpC.scale(16.f)).norm();
 
-            p = sample(CAM_FOCAL_VEC.add(t), rayDirection).scale(3.5f).add(p); // +p for color accumulation
+            p = sample(ORIGIN.add(t), rayDirection).scale(3.5f).add(p); // +p for color accumulation
         }
         return p;
     }
