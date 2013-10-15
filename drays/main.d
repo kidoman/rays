@@ -214,20 +214,20 @@ auto colorToRGB24(vector color)
   return rgb24;
 }
 
-void worker(W,R)(ubyte[3] result[], uint size, W world, R inputRange)
+void worker(W,P)(ubyte[3] result[], uint size, W world, P pixelRange)
 {
   seed_t seed = rndGen().front;
   size_t i = 0;
-  for (auto rng = inputRange; !rng.empty; rng.popFront(), ++i)
+  for (auto rng = pixelRange; !rng.empty; rng.popFront(), ++i)
   {
     auto pixel = rng.front;
     result[i] = pixel.pixelToRays(size,seed).raysToSamples(world,seed).samplesToColor.colorToRGB24;
   }
 }
 
-auto bindWorkerArgs(W,R)(ubyte[3] result[], uint size, W world, R inputRange)
+auto bindWorkerArgs(W,P)(ubyte[3] result[], uint size, W world, P pixelRange)
 {
-  return ()=>worker!(W,R)(result, size, world, inputRange);
+  return ()=>worker!(W,P)(result, size, world, pixelRange);
 }
 
 void main(string[] args) {
