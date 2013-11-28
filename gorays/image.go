@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 )
@@ -22,8 +23,15 @@ func (i *image) Save() {
 	}
 	defer f.Close()
 
-	fmt.Fprintf(f, "P6 %v %v 255 ", i.size, i.size)
-	if _, err := f.Write(i.data); err != nil {
+	if err := i.SaveTo(f); err != nil {
 		log.Panic(err)
 	}
+}
+
+func (i *image) SaveTo(w io.Writer) error {
+	fmt.Fprintf(w, "P6 %v %v 255 ", i.size, i.size)
+	if _, err := w.Write(i.data); err != nil {
+		return err
+	}
+	return nil
 }
