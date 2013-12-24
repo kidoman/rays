@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"runtime"
-	"runtime/pprof"
 	"sync"
 	"time"
 )
@@ -26,15 +25,6 @@ var (
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU() + 1)
 	flag.Parse()
-
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
-	}
 
 	// Calculate the dimensions of the image based on the mp flag. Image is always a square.
 	size := int(math.Sqrt(*mp * 1000000))
