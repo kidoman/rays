@@ -83,10 +83,8 @@ func main() {
 		// The following statement blocks until all the goroutines signal back with a wg.Done()
 		wg.Wait()
 
-		stopTime := time.Now()
-
 		// Calculate amount of time taken for the render.
-		duration := stopTime.Sub(startTime).Seconds()
+		duration := time.Since(startTime).Seconds()
 		results = append(results, duration)
 
 		log.Printf("Render complete")
