@@ -36,12 +36,14 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
+	// Calculate the dimensions of the image based on the mp flag. Image is always a square.
 	size := int(math.Sqrt(*mp * 1000000))
 	log.Printf("Will render %v time(s)", *times)
 	if *procs < 1 {
 		log.Fatalf("procs (%v) needs to be >= 1", *procs)
 	}
 
+	// Read the art file.
 	if *artfile == "ART" {
 		*artfile = path.Join(*home, *artfile)
 	}
@@ -51,46 +53,49 @@ func main() {
 	}
 	defer f.Close()
 
+	// Create objects out of the art file.
 	ar := readArt(f)
 	objects = ar.objects()
 
 	var results results
-	var overallDuration float64
+	// Allocate the image.
 	img := newImage(size)
 
+	// Run the render *times times.
 	for t := 0; t < *times; t++ {
 		log.Printf("Starting render#%v of size %v MP (%vx%v) with %v goroutine(s)", t+1, *mp, size, size, *procs)
 
-		var beforeMemstats runtime.MemStats
-		runtime.ReadMemStats(&beforeMemstats)
+		// Mark the start time.
 		startTime := time.Now()
 
+		// The camera position.
 		cam := newCamera(vector{X: -3.1, Y: -16, Z: 1.9}, size)
 
 		var wg sync.WaitGroup
+		// Initialize the wait group with *procs tasks, so that wg.Wait() blocks unless
+		// wg.Done() is called as many times.
 		wg.Add(*procs)
+		// Initiate the rendering process across *procs parallel streams.
 		for i := 0; i < *procs; i++ {
 			w := &worker{id: i, size: size, cam: cam, wg: &wg, img: img}
 			go w.render()
 		}
+		// The following statement blocks until all the goroutines signal back with a wg.Done()
 		wg.Wait()
 
 		stopTime := time.Now()
-		var afterMemstats runtime.MemStats
-		runtime.ReadMemStats(&afterMemstats)
 
+		// Calculate amount of time taken for the render.
 		duration := stopTime.Sub(startTime).Seconds()
 		results = append(results, duration)
-		overallDuration += duration
 
-		log.Printf("Render complete, mallocs %v, total alloc %v bytes", afterMemstats.Mallocs-beforeMemstats.Mallocs, afterMemstats.TotalAlloc-beforeMemstats.TotalAlloc)
+		log.Printf("Render complete")
 		log.Printf("Time taken for render %v", duration)
-
-		runtime.GC()
 	}
 
 	log.Printf("Average time %v", results.Average())
 
+	// Save the results, the image and done.
 	results.Save()
 	img.Save()
 }

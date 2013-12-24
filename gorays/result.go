@@ -8,12 +8,16 @@ import (
 
 type results []float64
 
-func (r results) Average() float64 {
-	sum := 0.0
+func (r results) Sum() (sum float64) {
 	for _, s := range r {
 		sum += s
 	}
-	return sum / float64(len(r))
+
+	return
+}
+
+func (r results) Average() float64 {
+	return r.Sum() / float64(len(r))
 }
 
 func (r results) Save() {
