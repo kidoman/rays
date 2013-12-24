@@ -67,10 +67,10 @@ func main() {
 
 		cam := newCamera(vector{X: -3.1, Y: -16, Z: 1.9}, size)
 
-		wg := &sync.WaitGroup{}
+		var wg sync.WaitGroup
 		wg.Add(*procs)
 		for i := 0; i < *procs; i++ {
-			w := &worker{id: i, size: size, cam: cam, wg: wg, img: img}
+			w := &worker{id: i, size: size, cam: cam, wg: &wg, img: img}
 			go w.render()
 		}
 		wg.Wait()
