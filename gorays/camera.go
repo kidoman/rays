@@ -5,7 +5,8 @@ type camera struct {
 	up        vector
 	right     vector
 	eyeOffset vector
-	ar        float64
+
+	ar float64
 }
 
 func newCamera(dir vector, size int) *camera {
@@ -13,6 +14,7 @@ func newCamera(dir vector, size int) *camera {
 	up := vector{X: 0, Y: 0, Z: 1}.CrossProduct(dir).Normalize().Scale(0.002)
 	right := dir.CrossProduct(up).Normalize().Scale(0.002)
 	eyeOffset := up.Add(right).Scale(-256).Add(dir)
+
 	ar := 512 / float64(size)
 
 	return &camera{
