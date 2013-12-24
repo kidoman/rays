@@ -54,7 +54,7 @@ func main() {
 	ar := readArt(f)
 	objects = ar.objects()
 
-	var result result
+	var results results
 	var overallDuration float64
 	img := newImage(size)
 
@@ -80,7 +80,7 @@ func main() {
 		runtime.ReadMemStats(&afterMemstats)
 
 		duration := stopTime.Sub(startTime).Seconds()
-		result.Samples = append(result.Samples, duration)
+		results = append(results, duration)
 		overallDuration += duration
 
 		log.Printf("Render complete, mallocs %v, total alloc %v bytes", afterMemstats.Mallocs-beforeMemstats.Mallocs, afterMemstats.TotalAlloc-beforeMemstats.TotalAlloc)
@@ -89,8 +89,8 @@ func main() {
 		runtime.GC()
 	}
 
-	log.Printf("Average time %v", result.Average())
+	log.Printf("Average time %v", results.Average())
 
-	result.Save()
+	results.Save()
 	img.Save()
 }

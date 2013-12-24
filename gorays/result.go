@@ -6,19 +6,17 @@ import (
 	"os"
 )
 
-type result struct {
-	Samples []float64
-}
+type results []float64
 
-func (r result) Average() float64 {
+func (r results) Average() float64 {
 	sum := 0.0
-	for _, s := range r.Samples {
+	for _, s := range r {
 		sum += s
 	}
-	return sum / float64(len(r.Samples))
+	return sum / float64(len(r))
 }
 
-func (r result) Save() {
+func (r results) Save() {
 	f, err := os.Create(*resultfile)
 	if err != nil {
 		log.Panic(err)
@@ -30,7 +28,7 @@ func (r result) Save() {
 		Samples []float64 `json:"samples"`
 	}{
 		r.Average(),
-		r.Samples,
+		r,
 	}
 
 	enc := json.NewEncoder(f)
