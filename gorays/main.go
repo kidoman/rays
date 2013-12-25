@@ -23,7 +23,9 @@ var (
 )
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU() + 1)
+	// Set the total number of threads to *procs.
+	runtime.GOMAXPROCS(*procs + 1)
+	// Parse the command line arguments.
 	flag.Parse()
 
 	// Calculate the dimensions of the image based on the mp flag. Image is always a square.
