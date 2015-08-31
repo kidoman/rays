@@ -6,6 +6,6 @@
 
 ## Usage
 
-    $ go get -u github.com/kid0m4n/rays/gorays
+    $ go get -u github.com/kidoman/rays/gorays
     $ gorays
     $ open gorays.ppm
